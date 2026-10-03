@@ -50,6 +50,18 @@ def encode_until_fits(make_cmd, out):
         if size < LIMIT: return crf, tries
         crf += 2
 
+# anteprima 20 s del primo ritornello + foglio di fotogrammi (dallo stesso intermedio)
+a0 = plan["sezioni"][5][1]
+prev = os.path.join(OUT, "anteprima_ritornello.mp4")
+run(["ffmpeg", "-v", "error", "-y", "-ss", f"{a0:.3f}", "-t", "20", "-i", inter, "-ss", f"{a0:.3f}", "-t", "20",
+     "-i", AUDIO, "-map", "0:v", "-map", "1:a", "-crf", "20"] + [
+     "-c:v", "libx264", "-preset", "slow", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k",
+     "-movflags", "+faststart", prev])
+run(["ffmpeg", "-v", "error", "-y", "-i", prev, "-vf",
+     "fps=1.2,scale=270:480,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:"
+     f"text='%{{eif\\:t+{int(a0)}\\:d}}s':x=6:y=6:fontsize=16:fontcolor=yellow:box=1:boxcolor=black@0.6,"
+     "tile=6x4:padding=4", "-frames:v", "1", os.path.join(OUT, "anteprima_sheet.jpg")])
+
 # 2. video completo
 full = os.path.join(OUT, "non_mi_fermo_v2_1080x1920.mp4")
 crf_full, tries_full = encode_until_fits(lambda crf, out: [

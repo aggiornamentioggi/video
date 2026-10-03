@@ -123,7 +123,6 @@ def section(t):
         if s[1] <= t < s[2]: return s
     return SECTIONS[-1]
 def in_chorus(t): return section(t)[0].startswith("ritornello")
-SECTION_FLASH = [fr(s[1]) for s in SECTIONS[1:-1]]          # flash su ogni cambio di sezione
 
 # ---------------------------------------------------------------- clip inserite
 # opzioni: in (s di clip), ramp (entra al 60% e torna al 100% sul beat dopo),
@@ -248,14 +247,12 @@ for name, t0, t1, lvl in SECTIONS:
         for k, s in KICKS:
             if t0 <= k < t1 and s > 0.6 and k - last > 8 * PERIOD * (0.5 if lvl == 4 else 1):
                 GL_FRAMES.append((fr(k), 7)); last = k
-KEY_FLASH = [(fr(WORDS[i]["inizio"]), {1: 0.3, 2: 0.5, 3: 0.5, 4: 0.7}.get(section(WORDS[i]["inizio"])[3], 0.3))
-             for i in range(len(WORDS)) if red[i] and WORDS[i]["inizio"] >= TORNO and
-             not (i > 0 and red[i - 1] and nmf[i]) and WORDS[i]["inizio"] < CLOSE]
+# Nessun flash bianco: tolti su richiesta (troppo forti)
 
 PLAN = {"durata_video": DUR_V, "frames": N,
         "sezioni": [(s[0], round(s[1], 2), round(min(s[2], DUR_V), 2), s[3]) for s in SECTIONS],
         "inserti": [{k: (round(v, 3) if isinstance(v, float) else v) for k, v in d.items()} for d in inserts],
-        "sfondi": len(bg), "frasi": len(PHR), "glitch": len(GL_FRAMES), "flash_parole": len(KEY_FLASH),
+        "sfondi": len(bg), "frasi": len(PHR), "glitch": len(GL_FRAMES),
         "tempo_bastardo": [round(TB, 3), round(TB_END, 3)],
         "chiusura": [round(CLOSE, 2), round(HIT1, 3), round(HIT2, 3), round(STUDIO_FADE, 3)],
         "opzionali": {k: bool(v) for k, v in OPT_FOUND.items()}}
@@ -697,11 +694,6 @@ def render_frame(f, src):
         if dk is not None and dk < 4 / FPS:
             amp = {1: 0.025, 2: 0.04, 3: 0.04, 4: 0.05}[sec[3]]
             frame = punch(frame, 1 + amp * [1, 0.75, 0.5, 0.25][min(3, int(dk * FPS))])
-    fl = 0.0
-    if any(g <= f < g + 2 for g in SECTION_FLASH) or fr(TB) <= f < fr(TB) + 2: fl = 1.0
-    for g, o in KEY_FLASH:
-        if g <= f < g + 2: fl = max(fl, o)
-    if fl: frame = frame * (1 - fl) + fl
     frame = frame + GRAIN[((f // GRAIN_STEP) * 7) % len(GRAIN)]
     rem = (N - 1 - f) / FPS
     if rem < 0.5: frame *= max(0.0, rem / 0.5)
