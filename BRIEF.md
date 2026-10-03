@@ -1,90 +1,146 @@
-# BRIEF: video "Non Mi Fermo" (Ipnos)
+# BRIEF v2: video "Non Mi Fermo" (Ipnos)
 
-Lavora in autonomia fino al video finito. Non fermarti a chiedere conferme: dove qualcosa manca, applica la regola di ripiego indicata qui sotto e annotala nel report finale.
+Questo brief SOSTITUISCE completamente il precedente. Lavora in autonomia fino alla consegna: non fermarti a chiedere conferme. Dove manca qualcosa applica il ripiego indicato e annotalo nel report.
 
 ## Obiettivo
 
-Video musicale verticale per TikTok, Reels e Shorts. Stile scuro e cinematografico: sfondo nero, testo parola per parola sincronizzato sul rap, rosso che pulsa sui ritornelli. L'artista non si vede mai in faccia.
+Video musicale verticale 9:16 per YouTube, TikTok, Reels e Shorts. Il primo render era troppo statico: due terzi su nero pieno, una parola enorme alla volta al centro. Questa versione deve essere **densa, dinamica e con un crescendo**, per tenere attaccato chi guarda dall'inizio alla fine. Stile scuro e cinematografico, rosso come colore d'accento. Il personaggio incappucciato non mostra mai il volto.
 
-## File nel repo
+## Cosa riusare dal lavoro precedente
 
-```
-audio/traccia.mp3      traccia completa (3:04,3)
-testo/testo.txt        testo ufficiale, una riga = una riga a schermo
-clip/01_corridoio.mp4  intro 1: passi nel corridoio (1080x1916, 6 s)
-clip/02_studio.mp4     intro 2: studio, cuffie in mano (1176x1764, 6 s)
-clip/tv.mp4            TV CRT con statico (1080x1916, 7 s)
-clip/strada.mp4        ragazzo incappucciato per strada (1176x1764, 7 s)
-clip/candela.mp4       candela (1176x1764, 5 s)
-clip/penna.png         penna sul foglio, immagine ferma
-clip/moneta.mp4        moneta che gira (PUÒ MANCARE)
-```
+- `out/sync.json` (tempi di ogni parola): riusalo, non rifare la trascrizione. Se manca o è corrotto, rifallo con sherpa-onnx e il modello `sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8` (finestre da 30 s, passo 25 s, solo i token centrali con 2,5 s di margine), allineando sempre al testo ufficiale.
+- Audio: traccia con i primi 4,5 s tagliati e fade in di 0,3 s. Durata sotto i 3:00.
+
+## File nella repo
+
+I nomi non sono quelli "puliti": cerca per inizio del nome, in qualsiasi cartella.
+
+| Inizia con | Ruolo |
+|---|---|
+| `Ipnos_-_Non_Mi_Fermo` (.mp3) | traccia |
+| `testo` (.txt) | testo ufficiale |
+| `The-hooded-young-man-keeps-walking` | corridoio |
+| `The-hooded-young-man-seen-from-behind` | studio, cuffie |
+| `The-old-CRT-television` | tv |
+| `hf_20261003_151301` | strada (Ruoti) |
+| `hf_20261003_154346` | candela |
+| `Scrittura` / `penna` (immagine) | penna |
+
+**Clip opzionali** (usale se ci sono, altrimenti salta quel punto senza fermarti): `moneta`, `goccia`, `carte`, `petardo`, `mare`, `lampione`, qualsiasi file che inizia con `personaggio` (nuove scene dell'incappucciato) e qualsiasi file che inizia con `performance` (riprese reali dell'artista che rappa).
+
+Tutte le clip non 9:16 vanno ritagliate al centro e portate a 1080x1920, mai deformate né con bande nere. Uniforma il colore di tutte le clip: neri profondi, mezzitoni caldi, ombre leggermente fredde, saturazione contenuta.
 
 ## Specifiche di output
 
-- 1080x1920, 30 fps, H.264 yuv420p, CRF 20, preset slow, AAC 192 kbps, `-movflags +faststart`
-- File finale sotto i 95 MB (limite GitHub 100 MB). Se lo supera, alza il CRF di 2 e rifai l'export
-- Durata sotto i 3:00
-- Tutte le clip non 9:16 vanno ritagliate ai lati (crop centrale) e portate a 1080x1920, mai deformate né con bande nere
+1080x1920, 30 fps, H.264 yuv420p, CRF 20, preset slow, AAC 192 kbps, `-movflags +faststart`. Ogni file sotto i 95 MB: se il video lo supera, alza il CRF di 2 e rifai l'export.
 
-## Passo 1: audio
+---
 
-Taglia i primi 4,5 secondi della traccia, così la durata scende a circa 2:59,8. Il finale resta intatto. Applica un fade in di 0,3 s sul nuovo inizio.
+## 1. SOTTOTITOLI
 
-## Passo 2: sincronizzazione parola per parola
+### Posizione
+- **Tutti i sottotitoli stanno nella parte inferiore del video**, nella fascia tra il **70% e l'80% dell'altezza** (y da 1344 a 1536 px)
+- Mai sotto l'80%: lì ci sono descrizione e pulsanti di TikTok e Reels
+- Centrati in orizzontale, larghezza massima 80% (864 px). Se una frase non ci sta, va su due righe dentro la fascia
+- Eccezioni: "TEMPO BASTARDO" e la chiusura finale restano al centro dello schermo (vedi sotto)
 
-Usa sherpa-onnx con il modello `sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8`, NON Whisper.
+### Contenuto
+- **Non più una parola alla volta.** Frasi da 2 a 4 parole, spezzando le righe del testo ai respiri naturali del rap
+- La parola cantata in quel momento è **bianca piena**, le altre della frase sono grigio al 50% (effetto karaoke)
+- Nessuna parola vuota da sola a schermo ("A", "È", "IL", "LA"): sempre attaccata alla parola dopo
 
-- Download: `curl -L -o m.tar.bz2 https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2` poi `tar xjf` (salva prima il file, il pipe diretto su tar può fallire in silenzio)
-- `OfflineRecognizer.from_transducer(..., model_type="nemo_transducer")`, audio mono 16 kHz
-- Finestre da 30 s con passo 25 s; tieni solo i token nella zona centrale di ogni finestra (2,5 s di margine per lato) per evitare errori ai bordi
-- Allinea i token riconosciuti al testo ufficiale di `testo/testo.txt` (il testo ufficiale vince sempre sulla trascrizione). Le parole non riconosciute vanno interpolate tra le vicine
-- Obiettivo: oltre il 90% delle parole agganciate direttamente
-- Salva il risultato in `out/sync.json` (parola, inizio, fine, riga) e FAI COMMIT SUBITO, prima di andare avanti. Se la sessione si interrompe, si riparte da qui
+### Font e dimensione
+- Frasi: **Montserrat SemiBold**, maiuscolo, corpo circa 64 px, spaziatura tra lettere +2%
+- Parole chiave: **Anton**, rosso #E10600, corpo circa 1,4 volte le altre
+- Parole chiave: cuore, tempo, bastardo, rischiare, mente, buio, scuro, eterno, muore, tradito, penna, voce, respiro, non mi fermo
+- Font da scaricare dal repo GitHub `google/fonts`
+- Ombra morbida nera (blur 12 px, opacità 70%) sotto tutto il testo, per la leggibilità su qualsiasi sfondo
 
-## Passo 3: scaletta
+### Effetti sul testo
+- Entrate a rotazione, mai la stessa due volte di seguito: blur da 12 px a 0 con opacità 0→1 in 6 frame, scivolata dal basso di 30 px, scivolata laterale di 30 px, a scatto con micro zoom 1.15→1.00 in 4 frame
+- **Glitch RGB split + tremolio** per 3–4 frame su: bastardo, muore, tradito, buio, scuro
+- Parole chiave rosse: pulsazione di scala ±6% sul beat finché restano a schermo
+- **Ritornelli**: effetto macchina da scrivere lettera per lettera, più micro scossa sui colpi di cassa
+- Piccole variazioni orizzontali (±40 px) da una frase all'altra, sempre dentro la fascia inferiore
+
+---
+
+## 2. SFONDO
+
+- **Niente nero pieno**, tranne su "TEMPO BASTARDO" e nella chiusura finale. Quei due momenti spiccano proprio perché sono gli unici neri
+- Quando non c'è una clip inserita, dietro al testo va una clip **sfocata (gaussian 20 px) e scurita al 25–30%**, con zoom lento 1.00→1.06:
+  - strofa 1: studio e corridoio
+  - ritornelli: candela e penna, alternate
+  - strofa 2: strada, tv e (se ci sono) mare e lampione
+- Usa anche porzioni diverse e ingrandite della stessa clip per variare
+- **Grana pellicola** leggera su tutto il video
+- **Light leak rossi** morbidi nei ritornelli, insieme alla pulsazione rossa (vignettatura che cresce e cala sulla cassa, intensità massima 35%)
+
+---
+
+## 3. DINAMICA (priorità alta)
+
+- Rileva i colpi di cassa dall'audio (onset detection sulle basse frequenze) e salvali in `out/beats.json`
+- **Regola della densità: ogni 1,5–3 secondi deve cambiare qualcosa** (taglio, inquadratura, porzione della clip, colore, posizione). Mai la stessa inquadratura ferma per più di 4 secondi
+- **Zoom punch** su ogni cassa: scala +4% e ritorno in 4 frame, su tutto il frame
+- Sfondo che cambia clip o inquadratura ogni 2 battute
+- Movimento continuo dello sfondo: pan lento, rotazione ±1,5°, drift. Nelle strofe aggiungi una scossa leggera costante
+- **Flash bianco** di 2 frame su ogni cambio di sezione e sulle parole chiave rosse
+- Clip inserite con **speed ramp**: entrano al 60% della velocità e tornano al 100% sul beat successivo
+- Tagli sempre secchi, sul beat. Nessuna dissolvenza tra le clip
+- Clip più corte del loro spazio: rallenta fino al 70% prima di ripetere. Clip più lunghe: taglia la fine
+
+### Crescendo
+L'intensità deve salire durante il video, non restare uguale:
+- **Strofa 1**: sobria, tagli ogni 2–3 s, effetti contenuti
+- **Primo ritornello**: primo salto, con rosso, pulsazione e macchina da scrivere
+- **Strofa 2**: nervosa, tagli ogni 1,5–2 s, scossa più forte, più glitch
+- **Ultimo ritornello**: massimo assoluto di tagli, rosso, zoom punch e flash
+- Chiusura: stacco netto sul nero e calma
+
+---
+
+## 4. STRUTTURA E STORIA
+
+L'incappucciato è il filo del video: arriva, scrive, esce nella notte, torna.
 
 | Momento | A schermo |
 |---|---|
-| Intro | `01_corridoio` poi `02_studio`. Le cuffie devono salire sulla testa esattamente sull'attacco di "Torno sul pezzo". Nessun testo in questa parte |
-| Strofa 1 | Nero con testo parola per parola. Clip `moneta` su "Devi rischiare per prendere tutto / Fato farabutto... / Sleghiamo legami", e deve finire su "legami". Se manca la moneta: nero con testo come il resto della strofa |
-| "Corsa per il tempo bastardo" | Nero. "TEMPO BASTARDO" entra in rosso a scatto, con un flash bianco di 2 frame, sul colpo del beat. Niente orologio |
-| Ritornelli (tutti) | Nero che pulsa rosso a tempo di battito. `penna.png` su "Prendo la penna scrivo in corsivo" e `candela` su "Fino a che non si spegne il cuore" |
-| Strofa 2 | `tv` da "Cambierò canale" fino a "assomigliare". `strada` su "Giro le strade vago nei posti" |
-| Coda | Nero. Sui colpi finali entra "NON MI FERMO", poi sotto compare "IPNOS". Ancora più sotto, in piccolo, "IPNOS CREATIVE STUDIO". Tutte e tre restano a schermo fino alla fine (vedi Chiusura) |
+| **Aggancio (0:00–0:00,5)** | Flash di mezzo secondo dell'immagine più forte: candela con "NON MI FERMO" rosso al centro. Poi stacco secco |
+| **Intro** | Corridoio **ridotto a circa 2 s**, poi studio: le cuffie salgono sulla testa esattamente sull'attacco di "Torno sul pezzo". Le parole "TORNO SUL PEZZO" compaiono in basso su quel colpo |
+| **Strofa 1** | Sfondi: studio e corridoio sfocati. Clip inserite: `moneta` da "Devi rischiare per prendere tutto" fino a "legami"; `goccia` su "Dentro la brocca cade la goccia"; `carte` su "Gioco di carte e il vaso scompare"; `petardo` su "Sotto sto mondo ci metto un petardo", con flash bianco su "petardo" |
+| **"Corsa per il tempo bastardo"** | Nero pieno. "TEMPO BASTARDO" rosso **al centro**, a scatto, con flash bianco e glitch sul colpo |
+| **Ritornelli** | `penna` su "Prendo la penna scrivo in corsivo" (push in lento 1.00→1.08 verso il pennino e tremolio di luce tipo lampada, la mano non si muove). `candela` su "Fino a che non si spegne il cuore" |
+| **Strofa 2** | `mare` su "Dentro la testa bro ho un mare diverso". `lampione` su "Un giorno tutto sarà buio", con taglio a nero di 1 secondo quando si spegne. `tv` da "Cambierò canale" fino a "assomigliare". `strada` su "Giro le strade vago nei posti" |
+| **Ultimo ritornello** | Massima intensità. Se c'è, usa un'inquadratura dell'incappucciato in luce rossa |
+| **Chiusura** | Vedi sotto |
 
-## Chiusura
+Riprese `performance` (se ci sono): distribuiscile in tutto il video come tagli di 1–2 s sui versi più forti e soprattutto nei ritornelli, a piena luminosità. Hanno la priorità sugli sfondi sfocati.
 
-Schermata finale su nero, tre righe centrate e impilate, che restano visibili insieme fino all'ultimo frame:
+Clip `personaggio` (se ci sono): usale dove la storia le richiede (tetto e strada nella strofa 2, studio rosso nell'ultimo ritornello).
 
-1. **NON MI FERMO**: grande, bianco, stesso font del video, entra a scatto sul colpo finale
-2. **IPNOS**: grande, rosso #E10600, entra a scatto sul colpo successivo
-3. **IPNOS CREATIVE STUDIO**: piccolo (circa un quarto dell'altezza di "IPNOS"), bianco al 70%, spaziatura tra lettere larga, entra in dissolvenza di 0,5 s dopo "IPNOS"
+---
 
-Il blocco resta centrato in verticale nella fascia sicura (20%–80% dell'altezza). Fade a nero solo negli ultimi 0,5 s, insieme all'audio.
+## 5. CHIUSURA
 
-## Animazione della penna
+Nero pieno, tre righe centrate al centro dello schermo, che restano visibili insieme fino all'ultimo frame:
 
-È un'immagine ferma. Animala con un push in lento (1.00 → 1.08) verso il pennino e un leggero tremolio di luminosità tipo lampada. La mano non deve muoversi.
+1. **NON MI FERMO**: bianco, Anton, entra a scatto sul colpo finale
+2. **IPNOS**: grande, rosso #E10600, Anton, entra a scatto sul colpo successivo
+3. **IPNOS CREATIVE STUDIO**: Montserrat SemiBold, bianco al 85%, corpo circa 40 px (**il doppio della versione precedente**), spaziatura tra lettere +20%, staccato da IPNOS di almeno 50 px, entra in dissolvenza di 0,5 s dopo IPNOS
 
-## Stile del testo
+Fade a nero solo negli ultimi 0,5 s, insieme all'audio.
 
-- Font bold condensato (Anton o Bebas Neue, scaricabili dal repo GitHub google/fonts), tutto maiuscolo
-- Una parola alla volta, entrata a scatto con un micro zoom (1.15 → 1.00 in 4 frame), centrata
-- Parole chiave in rosso #E10600, il resto bianco: cuore, tempo, bastardo, rischiare, mente, buio, scuro, eterno, muore, tradito, non mi fermo
-- Sopra le clip, testo con ombra nera morbida per la leggibilità
-- Tutto il testo resta nella fascia tra il 20% e l'80% dell'altezza, mai oltre i bordi del 9:16 e mai nel 15% inferiore, dove c'è l'interfaccia dei social
-- Pulsazione rossa dei ritornelli: vignettatura rossa che cresce e cala sui colpi di cassa, intensità massima 35%
+---
 
-## Tagli
+## 6. ORDINE DI LAVORO E CONSEGNA
 
-- Cambi di clip sempre secchi, sul beat. Nessuna dissolvenza
-- Clip più corte del loro spazio: rallenta fino al 70% prima di ripetere. Clip più lunghe: taglia la fine
-
-## Consegna
-
-1. `out/non_mi_fermo_1080x1920.mp4`
-2. `out/sync.json`
-3. `out/REPORT.md`: durata finale, peso del file, percentuale di parole agganciate e qualsiasi ripiego applicato (per esempio la moneta mancante)
-
-Fai commit e push di tutto su un branch `video`.
+1. Prepara le clip (crop, colore), rileva i beat, costruisci la timeline
+2. Renderizza un'**anteprima di 20 secondi** del primo ritornello in `out/anteprima_ritornello.mp4` e un foglio di fotogrammi in `out/anteprima_sheet.jpg`. Fai commit e push. **Poi prosegui senza aspettare**
+3. Renderizza il video completo: `out/non_mi_fermo_v2_1080x1920.mp4`
+4. Ricava dal video completo **3 tagli brevi per TikTok e Reels**, ciascuno con un flash di aggancio all'inizio e la chiusura IPNOS di 2 s alla fine:
+   - `out/taglio_ritornello.mp4`: primo ritornello completo (circa 25–35 s)
+   - `out/taglio_strofa.mp4`: le barre più forti della strofa 2 (circa 25–35 s)
+   - `out/taglio_finale.mp4`: ultimo ritornello e chiusura (circa 30–40 s)
+5. `out/REPORT.md`: durata e peso di ogni file, quali clip opzionali hai trovato e usato, quali sono mancate, ogni ripiego applicato
+6. Commit e push di tutto sul branch di lavoro della sessione
