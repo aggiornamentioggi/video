@@ -51,7 +51,17 @@ Usa sherpa-onnx con il modello `sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8`, NON
 | "Corsa per il tempo bastardo" | Nero. "TEMPO BASTARDO" entra in rosso a scatto, con un flash bianco di 2 frame, sul colpo del beat. Niente orologio |
 | Ritornelli (tutti) | Nero che pulsa rosso a tempo di battito. `penna.png` su "Prendo la penna scrivo in corsivo" e `candela` su "Fino a che non si spegne il cuore" |
 | Strofa 2 | `tv` da "Cambierò canale" fino a "assomigliare". `strada` su "Giro le strade vago nei posti" |
-| Coda | Nero. "NON MI FERMO" sui colpi finali, poi "IPNOS" fino alla fine |
+| Coda | Nero. Sui colpi finali entra "NON MI FERMO", poi sotto compare "IPNOS". Ancora più sotto, in piccolo, "IPNOS CREATIVE STUDIO". Tutte e tre restano a schermo fino alla fine (vedi Chiusura) |
+
+## Chiusura
+
+Schermata finale su nero, tre righe centrate e impilate, che restano visibili insieme fino all'ultimo frame:
+
+1. **NON MI FERMO**: grande, bianco, stesso font del video, entra a scatto sul colpo finale
+2. **IPNOS**: grande, rosso #E10600, entra a scatto sul colpo successivo
+3. **IPNOS CREATIVE STUDIO**: piccolo (circa un quarto dell'altezza di "IPNOS"), bianco al 70%, spaziatura tra lettere larga, entra in dissolvenza di 0,5 s dopo "IPNOS"
+
+Il blocco resta centrato in verticale nella fascia sicura (20%–80% dell'altezza). Fade a nero solo negli ultimi 0,5 s, insieme all'audio.
 
 ## Animazione della penna
 
