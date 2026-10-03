@@ -53,20 +53,26 @@ def encode_until_fits(make_cmd, out):
 # anteprima 20 s del primo ritornello + foglio di fotogrammi (dallo stesso intermedio)
 a0 = plan["sezioni"][5][1]
 prev = os.path.join(OUT, "anteprima_ritornello.mp4")
-run(["ffmpeg", "-v", "error", "-y", "-ss", f"{a0:.3f}", "-t", "20", "-i", inter, "-ss", f"{a0:.3f}", "-t", "20",
+fresh = os.path.exists(prev) and os.path.getmtime(prev) > os.path.getmtime(inter)
+if not fresh: run(["ffmpeg", "-v", "error", "-y", "-ss", f"{a0:.3f}", "-t", "20", "-i", inter, "-ss", f"{a0:.3f}", "-t", "20",
      "-i", AUDIO, "-map", "0:v", "-map", "1:a", "-crf", "20"] + [
      "-c:v", "libx264", "-preset", "slow", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k",
      "-movflags", "+faststart", prev])
-run(["ffmpeg", "-v", "error", "-y", "-i", prev, "-vf",
+if not fresh: run(["ffmpeg", "-v", "error", "-y", "-i", prev, "-vf",
      "fps=1.2,scale=270:480,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:"
      f"text='%{{eif\\:t+{int(a0)}\\:d}}s':x=6:y=6:fontsize=16:fontcolor=yellow:box=1:boxcolor=black@0.6,"
      "tile=6x4:padding=4", "-frames:v", "1", os.path.join(OUT, "anteprima_sheet.jpg")])
 
-# 2. video completo
+# 2. video completo (rifatto solo se manca o se l'intermedio è più recente)
 full = os.path.join(OUT, "non_mi_fermo_v2_1080x1920.mp4")
-crf_full, tries_full = encode_until_fits(lambda crf, out: [
-    "ffmpeg", "-v", "error", "-y", "-i", inter, "-i", AUDIO, "-map", "0:v", "-map", "1:a",
-    "-af", f"afade=t=out:st={DUR - 0.5:.3f}:d=0.5", "-t", f"{DUR:.3f}", "-crf", str(crf)] + ENC + [out], full)
+side = os.path.join(WORK, "full_tries.json")
+if os.path.exists(full) and os.path.exists(side) and os.path.getmtime(full) > os.path.getmtime(inter):
+    crf_full, tries_full = json.load(open(side))
+else:
+    crf_full, tries_full = encode_until_fits(lambda crf, out: [
+        "ffmpeg", "-v", "error", "-y", "-i", inter, "-i", AUDIO, "-map", "0:v", "-map", "1:a",
+        "-af", f"afade=t=out:st={DUR - 0.5:.3f}:d=0.5", "-t", f"{DUR:.3f}", "-crf", str(crf)] + ENC + [out], full)
+    json.dump([crf_full, tries_full], open(side, "w"))
 
 # 3. tagli brevi: aggancio (0,5 s del video completo) + segmento + chiusura IPNOS di 2 s
 words = json.load(open(os.path.join(OUT, "sync.json")))["parole"]
@@ -82,30 +88,43 @@ SHORTS = [
     ("taglio_strofa.mp4", snap(wt("vedo", s2[1])), snap(wt("non", wt("scordato", s2[1]))), True),
     ("taglio_finale.mp4", r2[1], DUR, False),     # contiene già la chiusura completa
 ]
-def short_cmd(a, b, add_close):
+def piece(t0, dur, out, afx=None):
+    """pezzo del video completo (dall'intermedio) con il suo audio, quasi senza perdite"""
+    cmd = ["ffmpeg", "-v", "error", "-y", "-ss", f"{t0:.3f}", "-t", f"{dur:.3f}", "-i", inter,
+           "-ss", f"{t0:.3f}", "-t", f"{dur:.3f}", "-i", AUDIO, "-map", "0:v", "-map", "1:a"]
+    if afx: cmd += ["-af", afx]
+    run(cmd + ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "8", "-c:a", "pcm_s16le", out])
+    return out
+
+def short_cmd(name, a, b, add_close):
+    """aggancio (primi 0,5 s del video completo, con l'audio del segmento) + segmento
+    + chiusura IPNOS di 2 s; pezzi separati e poi concat (memoria contenuta)"""
+    tmp = os.path.join(WORK, "short_" + name.replace(".mp4", ""))
+    os.makedirs(tmp, exist_ok=True)
+    hook = os.path.join(tmp, "h.mkv")
+    run(["ffmpeg", "-v", "error", "-y", "-t", "0.5", "-i", inter, "-ss", f"{a:.3f}", "-t", "0.5", "-i", AUDIO,
+         "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "8",
+         "-c:a", "pcm_s16le", hook])
+    seg_d = b - a - 0.5
+    parts = [hook, piece(a + 0.5, seg_d, os.path.join(tmp, "s.mkv"),
+                         f"afade=t=out:st={seg_d - (0.03 if add_close else 0.5):.3f}:d={0.03 if add_close else 0.5}")]
+    if add_close:
+        parts.append(piece(CL0, 2.0, os.path.join(tmp, "c.mkv"), "afade=t=in:d=0.02,afade=t=out:st=1.7:d=0.3"))
+    n = len(parts)
+    fc = "".join(f"[{k}:v][{k}:a]" for k in range(n)) + f"concat=n={n}:v=1:a=1[v][a]"
+    if add_close: fc += f";[v]fade=t=out:st={0.5 + seg_d + 1.7:.3f}:d=0.3[vo]"
+    vmap = "[vo]" if add_close else "[v]"
     def make(crf, out):
-        seg = b - a
-        v = (f"[0:v]trim=0:{0.5},setpts=PTS-STARTPTS[h];"
-             f"[0:v]trim={a + 0.5:.3f}:{b:.3f},setpts=PTS-STARTPTS[s];")
-        au = f"[1:a]atrim={a:.3f}:{b:.3f},asetpts=PTS-STARTPTS"
-        if add_close:
-            v += (f"[0:v]trim={CL0:.3f}:{CL0 + 2:.3f},setpts=PTS-STARTPTS,fade=t=out:st=1.7:d=0.3[c];"
-                  f"[h][s][c]concat=n=3:v=1:a=0[v]")
-            au += (f",afade=t=out:st={seg - 0.03:.3f}:d=0.03[a1];"
-                   f"[1:a]atrim={CL0:.3f}:{CL0 + 2:.3f},asetpts=PTS-STARTPTS,afade=t=in:d=0.02,"
-                   f"afade=t=out:st=1.7:d=0.3[a2];[a1][a2]concat=n=2:v=0:a=1[a]")
-        else:
-            v += "[h][s]concat=n=2:v=1:a=0[v]"
-            au += f",afade=t=out:st={seg - 0.5:.3f}:d=0.5[a]"
-        return ["ffmpeg", "-v", "error", "-y", "-i", inter, "-i", AUDIO, "-filter_complex", v + ";" + au,
-                "-map", "[v]", "-map", "[a]", "-r", "30", "-crf", str(crf)] + ENC + [out]
+        cmd = ["ffmpeg", "-v", "error", "-y"]
+        for p_ in parts: cmd += ["-i", p_]
+        return cmd + ["-filter_complex", fc, "-map", vmap, "-map", "[a]", "-crf", str(crf)] + ENC + [out]
     return make
 
 results = {"video_completo": dict(file=os.path.basename(full), crf=crf_full, tentativi=tries_full,
                                   durata=probe(full)[0], byte=probe(full)[1])}
 for name, a, b, close in SHORTS:
     out = os.path.join(OUT, name)
-    crf, tries = encode_until_fits(short_cmd(a, b, close), out)
+    crf, tries = encode_until_fits(short_cmd(name, a, b, close), out)
     d, s = probe(out)
     results[name] = dict(da=round(a, 2), a=round(b, 2), crf=crf, tentativi=tries, durata=d, byte=s)
 json.dump(results, open(os.path.join(WORK, "build_results.json"), "w"), indent=1)

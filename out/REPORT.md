@@ -1,56 +1,77 @@
-# Report: "Non Mi Fermo" (Ipnos)
+# Report v2: "Non Mi Fermo" (Ipnos)
 
-## Risultato
+Eseguito `BRIEF.md` v2, che sostituisce completamente il precedente. `out/sync.json` è stato riusato senza rifare la trascrizione.
 
-| | |
+## File consegnati
+
+| File | Durata | Peso | CRF |
+|---|---|---|---|
+| `non_mi_fermo_v2_1080x1920.mp4` | 2:59,70 | 78,1 MB (78 059 594 byte) | **24**: a CRF 20 e 22 superava i 95 MB, quindi CRF alzato due volte di 2 come da brief |
+| `anteprima_ritornello.mp4` | 0:20,00 | 17,3 MB | 20 |
+| `taglio_ritornello.mp4` | 0:29,00 | 24,1 MB | 20 |
+| `taglio_strofa.mp4` | 0:33,73 | 25,5 MB | 20 |
+| `taglio_finale.mp4` | 0:35,87 | 30,3 MB | 20 |
+| `anteprima_sheet.jpg` | foglio di 24 fotogrammi del primo ritornello | | |
+| `beats.json` | 402 beat (~143,5 BPM) e 299 colpi di cassa con la loro forza | | |
+
+Tutti i file sono 1080x1920, 30 fps, H.264 yuv420p, preset slow, AAC 192 kbps, `+faststart`, sotto i 95 MB. Il video v1 (`non_mi_fermo_1080x1920.mp4`) resta nella cartella come riferimento.
+
+## Clip opzionali
+
+Cercate per inizio del nome in tutta la repo: **nessuna trovata**.
+
+| Clip | Esito e ripiego |
 |---|---|
-| File | `out/non_mi_fermo_1080x1920.mp4` |
-| Durata finale | **2:59,70** (179,70 s, 5391 frame) |
-| Peso | **27,1 MB** (27 141 231 byte), sotto il limite di 95 MB: nessun rifacimento a CRF più alto |
-| Video | 1080x1920, 30 fps, H.264 yuv420p, CRF 20, preset slow, `+faststart` |
-| Audio | AAC 192 kbps, traccia tagliata dei primi 4,5 s, fade in 0,3 s, fade out 0,5 s finale |
-| Parole agganciate | **484 / 497 = 97,4 %** (obiettivo > 90 %) |
+| `moneta` | mancante: "Devi rischiare… / Sleghiamo legami" restano sullo sfondo sfocato dello studio/corridoio |
+| `goccia` | mancante: "Dentro la brocca cade la goccia" sullo sfondo sfocato |
+| `carte` | mancante: "Gioco di carte e il vaso scompare" sullo sfondo sfocato |
+| `petardo` | mancante: "Sotto sto mondo ci metto un petardo" sullo sfondo sfocato |
+| `mare` | mancante: lo sfondo della strofa 2 alterna solo strada e TV |
+| `lampione` | mancante: niente taglio a nero di 1 s su "Un giorno tutto sarà buio" (resta il glitch su "buio") |
+| `personaggio` | mancante: nell'ultimo ritornello l'incappucciato in luce rossa è ricavato dalle clip esistenti: studio (cuffie in testa) e corridoio, regradati in rosso, su "Senti la voce…" e "Battico cardiaco…" |
+| `performance` | mancante: nessuna ripresa dell'artista |
 
-## Sincronizzazione (`out/sync.json`)
+## Cosa è stato fatto
 
-- sherpa-onnx `sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8`, `nemo_transducer`, audio mono 16 kHz.
-- Finestre da 30 s con passo 25 s; tenute solo le parole nella zona centrale (2,5 s di margine per lato).
-- Allineamento globale (Needleman-Wunsch con somiglianza fuzzy) al testo ufficiale, che vince sempre sulla trascrizione. Le 13 parole non agganciate sono interpolate tra le vicine.
-- Campi per parola: `parola`, `inizio`, `fine`, `riga` (numero di riga in `testo/testo.txt`), `testo_riga`, `sezione`, `ripetizione`, `agganciata`.
-- Tempi relativi alla traccia già tagliata di 4,5 s.
+- **Aggancio 0–0,5 s**: candela a piena luce con "NON MI FERMO" rosso al centro, poi stacco secco.
+- **Intro**: corridoio ridotto a 1,9 s, poi studio. Un dettaglio stretto su mani e cuffie, quindi l'inquadratura larga con speed ramp, con l'attacco calcolato perché le cuffie arrivino in testa esattamente sull'attacco di "Torno" (8,85 s). Lì c'è uno stacco su un'inquadratura stretta e "TORNO SUL PEZZO" entra in basso.
+- **Sottotitoli**: 172 frasi da 2 a 4 parole, spezzate alle pause del rap, senza parole vuote da sole o in coda. Stanno nella fascia 70–80% dell'altezza, larghezza massima 80% (due righe se serve), con variazioni orizzontali di ±40 px.
+  - Karaoke: parola cantata bianca piena, le altre grigio 50%.
+  - Montserrat SemiBold 64 px maiuscolo con spaziatura +2%; parole chiave in Anton rosso #E10600 a 1,4 volte, con pulsazione di scala ±6% sul beat. Ombra morbida (blur 12 px, 70%).
+  - Entrate a rotazione, mai uguali di seguito: blur 12→0, scivolata dal basso, scivolata laterale, scatto con micro zoom.
+  - Nei ritornelli macchina da scrivere lettera per lettera, con micro scossa sui colpi di cassa.
+  - Glitch RGB e tremolio su bastardo, muore, tradito, buio, scuro, più glitch brevi aggiuntivi nella strofa 2 e nell'ultimo ritornello (27 glitch in tutto).
+- **Sfondi**: 104 segmenti tagliati sul beat. Ognuno ha una porzione ingrandita diversa della clip, pan, rotazione ±1,5°, zoom lento 1,00→1,06, sfocatura gaussiana ~20 px e luminosità al 28%.
+  - Strofa 1: studio e corridoio, cambio ogni 6 battiti (~2,5 s), scossa leggera.
+  - Ritornelli: candela e penna alternate, cambio ogni 4 battiti; nell'ultimo ritornello ogni 2.
+  - Strofa 2: strada e TV, cambio ogni 4 battiti (~1,7 s), scossa più forte.
+- **Nero pieno** solo su "TEMPO BASTARDO" (rosso al centro, a scatto, con glitch sul colpo) e nella chiusura.
+- **Clip inserite** a piena luminosità: penna (push in 1,00→1,08 verso il pennino e tremolio di lampada, la mano ferma), candela (spegnimento allineato su "cuore"), TV da "Cambierò canale" ad "assomigliare" (spezzata in due inquadrature per non superare i 4 s), strada su "Giro le strade vago nei posti". Tutte con speed ramp: entrano al 60% e tornano al 100% sul beat successivo.
+- **Dinamica e crescendo**: zoom punch sulla cassa. Nella strofa 1 è +2,5% e solo sulle casse forti; nei ritornelli e nella strofa 2 +4%; nell'ultimo ritornello +5%. Pulsazione rossa a vignettatura (massimo 35%) e light leak rossi nei ritornelli, più intensi nell'ultimo. Grana pellicola leggera su tutto.
+- **Colore**: tutte le clip uniformate (neri profondi, mezzitoni caldi, ombre leggermente fredde, saturazione all'82%).
+- **Chiusura**: nero. "NON MI FERMO" (Anton, bianco) entra sul colpo finale a 174,01 s, "IPNOS" (Anton, rosso) su quello dopo a 174,65 s. "IPNOS CREATIVE STUDIO" (Montserrat SemiBold 40 px, bianco 85%, spaziatura +20%, 60 px sotto IPNOS) entra in dissolvenza di 0,5 s dal beat successivo. Fade a nero e audio negli ultimi 0,5 s.
 
-## Scaletta realizzata
+## Tagli brevi
 
-| Momento | Tempo | A schermo |
-|---|---|---|
-| Intro | 0,00–5,71 | `01_corridoio` (fine tagliata) |
-| Intro | 5,71–9,92 | `02_studio`, attacco a 0,11 s nella clip: le cuffie arrivano in testa (3,25 s di clip) esattamente sull'attacco di "Torno" (8,85 s) |
-| Strofa 1 | 9,92– | nero, testo parola per parola |
-| Tempo bastardo | 56,80 | flash bianco di 2 frame, poi "TEMPO / BASTARDO" in rosso a scatto sul beat |
-| Ritornello 1 (×2) | 63,13–90,12 | nero con pulsazione rossa sui colpi di cassa; `penna` 66,06–69,47 e 79,62–82,97; `candela` 71,56–73,31 e 85,12–86,84 |
-| Strofa 2 | | `tv` 110,43–116,80 ("Cambierò canale" → "assomigliare"); `strada` 120,19–122,21 ("Giro le strade vago nei posti") |
-| Ritornello 2 (×2) | 143,85–172,38 | come sopra; `penna` 147,22–150,61 e 160,75–164,54; `candela` 152,72–154,44 e 166,26–167,97 |
-| Coda | 174,01 / 174,65 / 175,13 | "NON MI FERMO" (bianco) e "IPNOS" (rosso #E10600) a scatto sui due colpi finali dopo la pausa; "IPNOS CREATIVE STUDIO" (bianco 70 %, spaziato) in dissolvenza di 0,5 s dal beat successivo. Restano tutte e tre fino alla fine; fade a nero negli ultimi 0,5 s |
+Ognuno è ricavato dal video completo, con l'aggancio di 0,5 s all'inizio (sopra l'audio del segmento) e la chiusura IPNOS di 2 s alla fine.
 
-Tutti i cambi di clip sono secchi e agganciati al beat (griglia a ~143,5 BPM). Testo con font Anton, tutto maiuscolo, micro zoom 1.15 → 1.00 in 4 frame, centrato al 50 % dell'altezza. La chiusura sta nella fascia 20–80 % (verificato da un assert nel renderer). Le clip non 9:16 sono ritagliate al centro e scalate a 1080x1920, senza deformazioni né bande.
+- `taglio_ritornello.mp4`: primo ritornello completo, 63,13–90,12 s.
+- `taglio_strofa.mp4`: strofa 2 da "Vedo il chiaro scuro" fino a "…l'ho già scordato" (99,03–130,75 s): buio/scuro con glitch, TV, strada.
+- `taglio_finale.mp4`: ultimo ritornello e chiusura vera del brano, 143,85 s–fine. Non c'è una chiusura di 2 s aggiunta, perché quella completa è già inclusa.
 
-## Ripieghi e scelte annotate
+## Ripieghi e scelte
 
-1. **Moneta mancante**: `clip/moneta.mp4` non c'è. Come da ripiego del brief, la parte "Devi rischiare per prendere tutto / Fato farabutto… / Sleghiamo legami" è su nero con testo, come il resto della strofa.
-2. **Nomi dei file**: le clip sono state riconosciute per prefisso del nome (corrispondenza indicata dall'utente); i file non sono stati rinominati.
-3. **Ritornelli cantati due volte**: nell'audio ogni ritornello è ripetuto due volte di fila, mentre `testo.txt` lo riporta una volta sola. Per l'allineamento e la grafica il blocco del ritornello è stato duplicato (stesso testo ufficiale, `ripetizione` 1 e 2 in `sync.json`). Penna e candela compaiono quindi in tutti e quattro i passaggi.
-4. **"Ipnos Ehi"** (riga 1) non viene riconosciuto nell'audio tagliato. I tempi sono interpolati prima di "Torno"; cade comunque nell'intro, dove per brief non c'è testo.
-5. **Candela**: la clip è più lunga dello spazio. Invece di partire dall'inizio e tagliare la fine, l'attacco è spostato (circa 2,0 s) in modo che il soffio che spegne la fiamma cada su "cuore" ("si spegne il cuore"). La parte dopo è comunque tagliata.
-6. **Studio**: la clip resta a schermo fino al beat di "Forse" (9,92 s) perché si veda il gesto delle cuffie completato; "TORNO SUL PEZZO" compare sopra la clip con ombra.
-7. **Pulsazione dei ritornelli**: la cassa è sparsa (trap), quindi la vignettatura ha un fondo rosso del 6 % e picchi fino al 35 % sui colpi di cassa, con discesa esponenziale di ~0,3 s.
-8. **Clip più corte dello spazio**: nessuna (rallentamento al 70 % e loop implementati nel renderer ma non necessari).
-9. **Coda**: "colpi finali" interpretati come i due colpi che rientrano dopo la pausa (174,01 e 174,65 s); in questo modo il blocco finale resta leggibile per circa 5 s.
+1. **Flash bianchi tolti del tutto** su richiesta (troppo forti). Il brief li chiedeva su ogni cambio di sezione, sulle parole chiave rosse, su "TEMPO BASTARDO" e su "petardo". L'aggancio iniziale non è un flash bianco ed è rimasto.
+2. **CRF del video completo a 24**: la grana pellicola si comprime poco. Per stare sotto i 95 MB è stata applicata la regola del brief (20 → 22 → 24). La grana è leggera (rumore all'1%, rinnovato ogni 3 fotogrammi) per lo stesso motivo.
+3. **Ritornelli cantati due volte**: come in v1, il blocco del ritornello di `testo.txt` è ripetuto per seguire l'audio.
+4. **Candela**: l'attacco è spostato in modo che il soffio che spegne la fiamma cada su "cuore". Negli sfondi sfocati si usa solo la parte con la fiamma accesa.
+5. **Corridoio di 1,9 s e studio**: per arrivare con le cuffie in testa su "Torno" lo studio occupa 2,4–8,85 s in due inquadrature (dettaglio e larga) che mostrano in parte lo stesso gesto da due angoli.
+6. **Chiusura nei tagli da 2 s**: la finestra 174,0–176,0 s contiene l'ingresso di NON MI FERMO e di IPNOS; "IPNOS CREATIVE STUDIO" compare nell'ultimo secondo.
 
 ## Riprodurre
 
 ```
-# setup: sherpa-onnx, librosa, pillow; modello parakeet e Anton-Regular.ttf in WORK
-python3 tools/asr.py   MODEL WORK/audio16k.wav WORK/asr_words.json
-python3 tools/align.py WORK/asr_words.json testo/testo.txt out/sync.json 179.725
-python3 tools/render.py WORK            # --plan per la scaletta, --preview t1,t2 per i fotogrammi
+python3 tools/beats.py                                  # (in WORK) beat e casse
+python3 tools/render.py WORK --prep                     # clip graduate, sfondi, out/beats.json
+python3 tools/build.py WORK                             # render, anteprima, video completo, tagli
 ```
