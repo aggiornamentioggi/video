@@ -45,6 +45,12 @@ SRC = {
     "candela":   find_src(["hf_20261003_154346"]),
     "penna":     find_src(["Scrittura", "penna"]),
 }
+# clip aggiunte (caricate su main): nome -> inizio del nome del file
+NEW_CLIPS = {"tramonto": "tramonto", "ufficio": "ufficio", "brocca": "brocca", "carte": "carte",
+             "mare": "mare", "specchio": "specchio", "maschera": "maschera", "muro": "muro",
+             "torcia": "torcia", "foto": "foto"}
+for _k, _p in NEW_CLIPS.items():
+    if find_src([_p]): SRC[_k] = find_src([_p])
 OPTIONAL = ["moneta", "goccia", "carte", "petardo", "mare", "lampione", "personaggio", "performance"]
 OPT_FOUND = {k: find_src([k]) for k in OPTIONAL}
 
@@ -158,7 +164,25 @@ a = snap(word_t("Cambierò")); b = snap(line_span(find_line("Io Non voglio mai a
 mid = snap((a + b) / 2)                          # mai la stessa inquadratura > 4 s
 ins("tv", a, mid, inp=0.0, ramp=True)
 ins("tv", mid, b, inp=content(mid - a, a), ramp=False, zoom=1.45, cx=0.48, cy=0.47)
-a, b = line_span(find_line("Giro le strade")[0]); ins("strada", snap(a), snap(b), inp=0.0, ramp=True)
+# Clip sui versi (da out/sync.json). Più corte del verso: rallentate fino a 0,8x, mai in loop;
+# se non bastano neanche a 0,8x l'inserto finisce sul beat prima che la clip si esaurisca.
+# "muro" su "Giro le strade" sostituisce "strada" (che resta come sfondo sfocato).
+def clip_len(name):
+    return float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                                          "-of", "csv=p=0", SRC[name]]))
+VERSI = [("tramonto", "Vorrei non ci fosse", "Che tutto finisse"),
+         ("ufficio", "Lavorare per vivere", "Vivere per lavorare"),
+         ("brocca", "Dentro la brocca", None), ("carte", "Gioco di carte", None),
+         ("mare", "Dentro la testa", None), ("specchio", "Sono un artista", "Senza un po"),
+         ("maschera", "Odio lo standard", "Voglio le robe"), ("muro", "Giro le strade", None),
+         ("torcia", "Cerco i dettagli", None), ("foto", "L'istante presente", None)]
+for name, first, last in VERSI:
+    if name not in SRC: continue
+    g0 = find_line(first)[0]; g1 = find_line(last)[0] if last else g0
+    a = snap(WORDS[g0[0]]["inizio"]); b = snap(line_span(g1)[1])
+    fit = a + clip_len(name) / 0.8
+    if fit < b: b = float(GRID[GRID <= fit + 1e-6][-1])
+    ins(name, a, b, inp=0.0, ramp=False, slow08=True)
 
 # Ultimo ritornello: l'incappucciato in luce rossa (ripiego: nessuna clip "personaggio")
 for g in find_line("Senti la voce"):
@@ -281,6 +305,7 @@ def prep():
         subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", src, "-vf",
             f"{CROP},scale={W}:{H}:flags=lanczos,{GRADE}", "-an", "-c:v", "libx264", "-crf", "10",
             "-preset", "veryfast", "-pix_fmt", "yuv420p", out])
+        if name not in ("studio", "corridoio", "candela", "strada", "tv"): continue
         trim = "trim=0:3.0," if name == "candela" else ""          # sfondo: solo fiamma accesa
         raw = subprocess.check_output(["ffmpeg", "-v", "error", "-i", out, "-filter_complex",
             f"[0:v]{trim}scale={BW}:{BH},setpts=(PTS-STARTPTS)/0.7,fps={FPS},"
@@ -496,7 +521,7 @@ Y_CS = top + NMF["h"] + G1 + IP["h"] + G2 + CS["h"] / 2
 # ---------------------------------------------------------------- effetti di frame
 yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
 _r = np.sqrt(((xx - W / 2) / (W / 2)) ** 2 + ((yy - H / 2) / (H / 2)) ** 2) / math.sqrt(2)
-VIG = np.clip((_r - 0.25) / 0.75, 0, 1) ** 1.5
+VIG = np.clip((_r - 0.45) / 0.55, 0, 1) ** 1.5          # più leggera: centro libero
 VIG = (VIG / VIG.max()).astype(np.float32)[..., None]
 del yy, xx, _r
 RED_F = np.array(RED, np.float32) / 255
@@ -506,9 +531,9 @@ KICK_STRONG = np.array([k for k, s in KICKS if s > 0.6])
 def pulse(t):
     if not in_chorus(t): return 0.0
     dt = last_event(KICK_T, t)
-    return 0.06 if dt is None else min(0.35, 0.06 + 0.29 * math.exp(-dt / 0.32))
+    return 0.04 if dt is None else min(0.35, 0.04 + 0.31 * math.exp(-dt / 0.32))
 
-GRAIN_AMP, GRAIN_STEP = float(os.environ.get("GRAIN_AMP", "0.010")), int(os.environ.get("GRAIN_STEP", "3"))
+GRAIN_AMP, GRAIN_STEP = float(os.environ.get("GRAIN_AMP", "0.005")), int(os.environ.get("GRAIN_STEP", "3"))
 _g = np.random.default_rng(7)
 GRAIN = []
 for _ in range(12):
@@ -562,7 +587,8 @@ class ClipReader:
         slot = self.n / FPS; ramp = d.get("ramp", False)
         tb = (next_beat(d["t0"]) - d["t0"]) if ramp else 0.0
         need = content(slot, d["t0"], ramp)
-        sp = 1.0 if need <= clen else max(0.7, (clen - 0.6 * tb) / max(0.01, slot - tb))
+        minsp = 0.8 if d.get("slow08") else 0.7
+        sp = 1.0 if need <= clen else max(minsp, (clen - 0.6 * tb) / max(0.01, slot - tb))
         a = 0.6 * tb
         expr = f"if(lt(T,{a:.4f}),T/0.6,{tb:.4f}+(T-{a:.4f})/{sp:.4f})" if ramp else f"T/{sp:.4f}"
         z = d.get("zoom", 1.0)
@@ -572,7 +598,8 @@ class ClipReader:
             vf = (f"crop=iw/{z}:ih/{z}:'min(max(iw*{cx}-iw/{2*z},0),iw-iw/{z})':"
                   f"'min(max(ih*{cy}-ih/{2*z},0),ih-ih/{z})',scale={W}:{H}:flags=lanczos,")
         vf += f"setpts=PTS-STARTPTS,setpts='({expr})/TB',fps={FPS}"
-        loop = ["-stream_loop", "-1"] if content(slot, d["t0"], ramp, sp) > clen + 0.05 else []
+        loop = ["-stream_loop", "-1"] if content(slot, d["t0"], ramp, sp) > clen + 0.05 \
+            and not d.get("slow08") else []
         cmd = ["ffmpeg", "-v", "error"] + loop + ["-ss", f"{d.get('inp', 0.0):.3f}", "-i", src, "-vf", vf,
                "-frames:v", str(self.n), "-f", "rawvideo", "-pix_fmt", "rgb24", "-"]
         self.p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
@@ -647,8 +674,10 @@ def bg_frame(d, f):
     a, b = ca, -sa; c = cx - ca * BW / 2 + sa * BH / 2
     d_, e = sa, ca; g = cy - sa * BW / 2 - ca * BH / 2
     im = src.transform((BW, BH), Image.AFFINE, (a, b, c, d_, e, g), Image.BILINEAR)
-    im = im.filter(ImageFilter.GaussianBlur(6.7)).resize((W, H), Image.BILINEAR)
-    return np.asarray(im, np.float32) / 255 * 0.28
+    chor = d["lvl"] in (2, 4)
+    # ritornelli: oscuramento dimezzato (luminosità 64% invece di 28%) e sfocatura più leggera
+    im = im.filter(ImageFilter.GaussianBlur(4.0 if chor else 6.7)).resize((W, H), Image.BILINEAR)
+    return np.asarray(im, np.float32) / 255 * (0.64 if chor else 0.28)
 
 class Sources:
     def __init__(self): self.cur = (None, None)
@@ -677,7 +706,7 @@ def render_frame(f, src):
     p = pulse(t)
     if p > 0.002:
         frame = frame * (1 - VIG * p) + RED_F * (VIG * p)
-        lk = leak(t, (0.18 if sec[3] == 2 else 0.28) + 0.9 * (p - 0.06))
+        lk = leak(t, (0.10 if sec[3] == 2 else 0.16) + 0.6 * (p - 0.04))
         frame = 1 - (1 - frame) * (1 - lk)
     if f >= fr(HOOK): draw_phrases(frame, f)
     if fr(TB) <= f < fr(TB_END): paste_block(frame, TB_IMG, H / 2, f - fr(TB))
