@@ -23,13 +23,16 @@ TRATTI = [
     ("preview_4_finale.mp4", plan["chiusura"][0], DUR),
     ("preview_5_fiches.mp4", [d for d in plan["inserti"] if d["name"] == "strada"][0]["t0"],
      [d for d in plan["inserti"] if d["name"] == "fiches" and not d.get("zoom")][0]["map"][1][0] + 0.75),
+    # v7: intro multicamera, dall'inizio fino alla fine di "con il mio accento" (senza margine)
+    ("preview_intro.mp4", 0.0, [d for d in plan["inserti"] if d["name"] == "tramonto"][0]["t0"], 0.0),
 ]
 ONLY = sys.argv[2:]
 res = json.load(open(os.path.join(WORK, "previews.json"))) if ONLY and os.path.exists(
     os.path.join(WORK, "previews.json")) else {}
-for name, a, b in TRATTI:
-    if ONLY and not any(o in name for o in ONLY): continue
-    t0, t1 = max(0.0, a - PAD), min(DUR, b + PAD)
+for name, a, b, *pad in TRATTI:
+    if ONLY and name not in ONLY and not any(o in name for o in ONLY): continue
+    pd = pad[0] if pad else PAD
+    t0, t1 = max(0.0, a - pd), min(DUR, b + pd)
     inter = os.path.join(WORK, "prev_" + name)
     subprocess.check_call(RENDER + ["--range", f"{t0:.3f},{t1:.3f}", "--out", inter, "--inter"])
     out = os.path.join(OUT, name)

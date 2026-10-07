@@ -1,6 +1,31 @@
-# REPORT v6: "Non Mi Fermo" (Ipnos)
+# REPORT v7 (intro in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
 
 Render completo con `tools/build.py` dalla timeline v6 di `tools/render.py` (esportato dopo "ok export"): è la v5 con main unito (cervello, corridoio di specchi, logo) e solo le modifiche richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
+
+## v7: intro multicamera (in anteprima, export completo dopo "ok export")
+
+Modificato solo il tratto dalla fine della porta (5,29 s) a "con il mio accento" (15,72 s). Il video completo in `out/` è ancora la v6. Anteprima: `out/preview/preview_intro.mp4` (0–15,73 s, 720p, CRF 28, con l'audio). Controllo dei bordi: 0 fotogrammi fuori soglia su 472.
+
+La clip dello studio è montata come una ripresa multicamera: stessa clip, tempo continuo senza salti (le cuffie arrivano in testa su "Torno" come prima), solo il crop cambia, con stacco sul beat. Niente tremolio, flash o bande.
+
+| Tempo (s) | Inquadratura | Crop / effetto | Tempo di clip |
+|---|---|---|---|
+| 5.29–5.71 | studio, larga (come prima) | crop 1.35x | 0.00–0.41 s |
+| 5.71–6.55 | studio, stretta sulle cuffie in mano | crop 2.0x | 0.41–1.22 s |
+| 6.55–9.91 | studio, media spalle e testa | crop 1.5x, punch-in 1,00 → 1,12 in 3 fotogrammi su "Torno" (8,80 s), poi tiene | 1.22–4.45 s |
+| 9.91–10.31 | studio, stretta sul cappuccio da dietro | crop 2.0x | 4.45–4.81 s |
+| 10.31–10.70 | studio, media | crop 1.4x | 4.81–5.18 s |
+| 10.70–11.15 | studio, stretta sul cappuccio da dietro | crop 2.0x | 5.18–5.58 s |
+| 11.15–11.59 | studio, media | crop 1.4x | 5.58–5.99 s |
+| 11.59–15.72 | microfono con la griglia | intero, zoom lento 1,00 → 1,15 | 0–4.13 s |
+
+- Dall'ingresso a "Torno": larga per un beat; stretta sulle cuffie in mano per due beat (si vedono in mano solo fino a ~1,2 s di clip, poi le alza); media su spalle e testa mentre le porta alla testa.
+- "Torno sul pezzo": la media continua con il punch-in sul colpo.
+- "Forse ci resto, nemmeno lo so": a ogni beat si alterna stretta sul cappuccio (2x) e media (1,4x).
+- "Dico le cose quelle che sento": stacco sul beat (11,59 s) al microfono con la griglia, che parte da qui (prima partiva su "Confesso") e prosegue su "Confesso i peccati con il mio accento" con zoom lento in avanti fino a "Vorrei".
+- Lo studio dopo le cuffie ora va a 0,92x (prima 0,61x), perché finisce prima.
+- Nitidezza: i crop a 2x sulla clip dello studio (1176x1764) restano nitidi, quindi non è servito ridurli. Il microfono è a 1080x1920 nativo.
+- La raffica su "Pacato" usa le stesse inquadrature di studio e microfono di prima: è identica alla v6.
 
 ## v6
 

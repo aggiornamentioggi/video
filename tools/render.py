@@ -209,14 +209,32 @@ for _k in range(_n):
 ins("corridoio_hfr", 0.0, DOOR0, map=_cm, zoom=1.25, cx=0.5, cy=0.45, ramp_fine=round(_c, 3))
 ins("porta", DOOR0, STUDIO0, map=[(DOOR0, STUDIO0, 0.0, DOOR_LEN)], zoomramp=(1.0, 1.10))
 CONF = wt("Confesso")
-ins("studio", STUDIO0, CONF, map=[(STUDIO0, TORNO_T, 0.0, CUFFIE_C),       # rallentata quanto serve
-                                  (TORNO_T, CONF, CUFFIE_C, clipend("studio"))],
-    zoom=1.35, cx=0.48, cy=0.30)
+# v7: studio montato come multicamera: stessa clip, tempo continuo, crop diversi con stacco sul beat
+T_DICO1 = S(L("Dico le cose"))                            # qui parte il microfono
+_se = clipend("studio")
+def studio_c(t):                                          # tempo di clip continuo (cuffie su "Torno")
+    if t <= TORNO_T: return CUFFIE_C * (t - STUDIO0) / (TORNO_T - STUDIO0)
+    return CUFFIE_C + (_se - CUFFIE_C) * (t - TORNO_T) / (T_DICO1 - TORNO_T)
+_g = [float(g) for g in GRID if STUDIO0 + 0.05 < g < T_DICO1 - 0.05]
+B1 = _g[0]                                                # 1 beat larga
+B2 = [g for g in _g if studio_c(g) <= 1.25][-1]           # stretta sulle cuffie finché sono in mano
+CUT_F = CUT_S1                                            # "Forse": beat dopo "Torno sul pezzo"
+SHOTS = [(STUDIO0, B1, dict(zoom=1.35, cx=0.48, cy=0.30)),            # 1) larga come prima
+         (B1, B2, dict(zoom=2.0, cx=0.47, cy=0.54)),                  # 2) stretta sulle cuffie in mano
+         (B2, CUT_F, dict(zoom=1.5, cx=0.40, cy=0.30,                 # 3) media spalle e testa
+                         punchin=(TORNO_T, 1.12, 3)))]                # punch-in sul colpo di "Torno"
+_fg = [g for g in _g if CUT_F - 0.05 <= g] + [T_DICO1]
+for k, (a_, b_) in enumerate(zip(_fg[:-1], _fg[1:])):     # "Forse ci resto": alterna sul beat
+    SHOTS.append((a_, b_, dict(zoom=2.0, cx=0.37, cy=0.20) if k % 2 == 0 else dict(zoom=1.4, cx=0.42, cy=0.32)))
+for k, (a_, b_, o_) in enumerate(SHOTS):          # la raffica su "Pacato" usa l'inquadratura di prima
+    rf = dict(raffica_as=("studio", CUFFIE_C / 2, 1.35, 0.48, 0.30)) if k == 0 else dict(no_raffica=True)
+    ins("studio", a_, b_, map=[(a_, b_, studio_c(a_), studio_c(b_))], **o_, **rf)
 FLASHES = {}
 
 # --- strofa 1
 T_VOR = S(L("Vorrei non ci fosse")); T_MENTE = S(L("La mente"))
-fit("microfono", CONF, T_VOR, 0.0, clipend("microfono"))
+fit("microfono", T_DICO1, T_VOR, 0.0, clipend("microfono"), zoomramp=(1.0, 1.15),   # v7: da "Dico le cose"
+    raffica_as=("microfono", (T_VOR - CONF) / 2, 1.0, 0.5, 0.5))
 ins("tramonto", T_VOR, T_MENTE, map=[(T_VOR, T_MENTE, 0.0, 0.8 * (T_MENTE - T_VOR))])
 T_FRESCO = S(L("Torno fresco"))
 fit("pozzo", T_MENTE, T_FRESCO, 0.0, clipend("pozzo"), zoomramp=(1.0, 1.18))
@@ -373,6 +391,8 @@ ins("cervello", T_CAP, chorus[1][0], map=[(T_CAP, TRAD, BRAIN_IN, CRACK),
 seen = []
 for d in sorted(inserts, key=lambda d: d["t0"]):
     if d["t0"] >= MONTAGE[0] or ("map" not in d and d["name"] != "specchi") or d.get("no_raffica"): continue
+    if d.get("raffica_as"):
+        seen.append(tuple(d["raffica_as"])); continue
     if d["name"] == "specchi":                    # v6: immagine ferma (al posto del muro)
         seen.append(("specchi", 0.0, 1.1, 0.5, 0.5)); continue
     m = d["map"][0]; mid_c = (m[2] + m[3]) / 2
@@ -954,6 +974,10 @@ class MapReader:
         if zr:
             s = zr[0] + (zr[1] - zr[0]) * k / max(1, self.n - 1)
             if s > 1.001: a = punch(a, s)
+        pi = self.d.get("punchin")                 # punch-in: 1,0 -> scala in n fotogrammi, poi tiene
+        if pi:
+            j = fr(self.d["t0"]) + k - fr(pi[0])
+            if j >= 0: a = punch(a, 1 + (pi[1] - 1) * min(1.0, (j + 1) / pi[2]))
         if self.d.get("heart"): a = heart_frame(a, fr(self.d["t0"]) + k)
         return to_red(a) if self.red else a
     def close(self): self.p.kill(); self.p.wait()
