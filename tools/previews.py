@@ -1,6 +1,6 @@
 """Anteprime brevi dei tratti modificati (720p, qualità bassa, con l'audio), 1 s prima e dopo.
 
-Uso: python3 tools/previews.py WORK
+Uso: python3 tools/previews.py WORK [nome ...]   (solo le anteprime indicate, es. specchi)
 """
 import json, os, subprocess, sys
 
@@ -22,8 +22,11 @@ TRATTI = [
     ("preview_3_cervello.mp4", ins["cervello"]["t0"], ins["cervello"]["t1"]),
     ("preview_4_finale.mp4", plan["chiusura"][0], DUR),
 ]
-res = {}
+ONLY = sys.argv[2:]
+res = json.load(open(os.path.join(WORK, "previews.json"))) if ONLY and os.path.exists(
+    os.path.join(WORK, "previews.json")) else {}
 for name, a, b in TRATTI:
+    if ONLY and not any(o in name for o in ONLY): continue
     t0, t1 = max(0.0, a - PAD), min(DUR, b + PAD)
     inter = os.path.join(WORK, "prev_" + name)
     subprocess.check_call(RENDER + ["--range", f"{t0:.3f},{t1:.3f}", "--out", inter, "--inter"])

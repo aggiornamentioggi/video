@@ -9,7 +9,7 @@ Il video completo in `out/` è ancora la **v5**: lo riesporto solo dopo "ok expo
 | Anteprima | Tratto modificato | Contenuto | Peso |
 |---|---|---|---|
 | `preview/preview_1_intro.mp4` | 0.00–9.91 s | 0.00–10.91 s | 0.82 MB |
-| `preview/preview_2_specchi.mp4` | 22.55–24.66 s | 21.55–25.66 s | 0.61 MB |
+| `preview/preview_2_specchi.mp4` | 22.55–25.96 s | 21.55–26.96 s | 0.71 MB |
 | `preview/preview_3_cervello.mp4` | 139.57–143.85 s | 138.57–144.85 s | 0.52 MB |
 | `preview/preview_4_finale.mp4` | 172.38–179.70 s | 171.38–179.70 s | 0.29 MB |
 
@@ -23,10 +23,10 @@ Controllo dei bordi (`tools/edge_check.py`, ora legge l'altezza reale del video)
 - IPNOS: bianca #FFFFFF, al ~25% della larghezza sul primo colpo (0,165 s), centrata al 68% dell'altezza, sopra il corridoio in movimento. Si rimpicciolisce di scatto sui due colpi (0,82 e 0,65) e sfuma sulla coda (1,15–1,85 s) come prima.
 
 **2. Corridoio degli specchi**
-- Su "Torno fresco ma non torno quello" (22.55–24.66 s), al posto di muro.mp4, l'immagine del corridoio di specchi, con la stessa color grading.
+- Su "Torno fresco ma non torno quello / ma non torno questo e domani resto" (22.55–25.96 s), al posto di muro.mp4, l'immagine del corridoio di specchi, con la stessa color grading.
 - Carrello in avanti: zoom centrato sul punto di fuga da 1,00 a 1,20 con ease-in-out per tutto il tratto, senza traslazioni né rotazioni. L'immagine è preparata a 1,2x della risoluzione, così lo zoom resta nitido.
 - Su "quello" (23,68 s) luminosità +10% per 4 fotogrammi.
-- Stacco sul beat alla strada (24,66 s).
+- Stacco sul beat alla strada su "Dico solo che non voglio il resto" (25,96 s): la strada resta con lo stesso crop e lo stesso punto di partenza, ma dura meno.
 - Nella raffica su "Pacato" l'inquadratura del muro è diventata quella degli specchi (il muro non si vede più prima).
 
 **3. Cervello che si crepa**
@@ -41,7 +41,7 @@ Controllo dei bordi (`tools/edge_check.py`, ora legge l'altezza reale del video)
 
 **Ripieghi v6**
 - **Immagine degli specchi**: "1000322517.png" non c'è su main. L'unica immagine nuova che corrisponde alla descrizione (corridoio buio con specchi ai lati e il ragazzo incappucciato riflesso di spalle) è "Corridoio infinito di specchi e ombre.png": ho usato quella. L'altro file nuovo è il logo ("Logo IPNOS Creative Studio in bianco e nero.png").
-- **Specchi oltre il verso**: il verso finisce su "quello" (23,92 s), ma la clip successiva (la strada, che non va toccata) parte a 24,66 s. Gli specchi restano fino a lì, con lo zoom distribuito su tutto il tratto, invece di lasciare un buco o spostare la strada.
+- **Specchi anche su "e domani resto"** (richiesto dopo la prima anteprima): gli specchi arrivano fino a "Dico solo", lo zoom 1,00 → 1,20 è distribuito su tutto il tratto e la strada parte dopo.
 - **Cervello**: per far cadere il pezzo su "tradito" usando la clip intera servirebbe 1,25x. Per restare entro 1,2x ho saltato i primi 0,16 s della clip, in cui il cervello è fermo.
 
 ## File (video completo v5)

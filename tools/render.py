@@ -220,7 +220,7 @@ fit("microfono", CONF, T_VOR, 0.0, clipend("microfono"))
 ins("tramonto", T_VOR, T_MENTE, map=[(T_VOR, T_MENTE, 0.0, 0.8 * (T_MENTE - T_VOR))])
 T_FRESCO = S(L("Torno fresco"))
 fit("pozzo", T_MENTE, T_FRESCO, 0.0, clipend("pozzo"), zoomramp=(1.0, 1.18))
-T_DOM = S(wt("e", L("Ma non torno questo")))
+T_DOM = S(L("Dico solo che non"))              # v6: specchi anche su "e domani resto"
 QUELLO = wt("quello", T_FRESCO)                 # v6: corridoio degli specchi, carrello in avanti
 ins("specchi", T_FRESCO, T_DOM, pulse_at=QUELLO)
 T_INV = S(L("Voglio tutto quello"))
