@@ -1,10 +1,10 @@
-# REPORT v6 (anteprime) / v5 (video completo): "Non Mi Fermo" (Ipnos)
+# REPORT v6: "Non Mi Fermo" (Ipnos)
 
-Render con `tools/build.py` dalla timeline v5 di `tools/render.py`: è la v4 con main unito (cuore di vetro) e solo le correzioni richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
+Render completo con `tools/build.py` dalla timeline v6 di `tools/render.py` (esportato dopo "ok export"): è la v5 con main unito (cervello, corridoio di specchi, logo) e solo le modifiche richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
 
-## v6: in anteprima (l'export completo non è ancora rifatto)
+## v6
 
-Il video completo in `out/` è ancora la **v5**: lo riesporto solo dopo "ok export", con le specifiche di sempre. Per ora ci sono solo le anteprime dei tratti modificati in `out/preview/`: 720p, CRF 28, audio AAC 128 kbps, 1 s prima e dopo ogni tratto (l'ultima finisce con il video).
+Prima dell'export completo ho preparato le anteprime dei tratti modificati in `out/preview/`: 720p, CRF 28, audio AAC 128 kbps, 1 s prima e dopo ogni tratto. Il video completo corrisponde alle anteprime approvate (stesso piano).
 
 | Anteprima | Tratto modificato | Contenuto | Peso |
 |---|---|---|---|
@@ -52,21 +52,34 @@ Controllo dei bordi (`tools/edge_check.py`, ora legge l'altezza reale del video)
 - **Specchi e "e domani resto"**: come richiesto, gli specchi arrivano fino a "Dico solo" (25,96 s). Su questo verso quindi non c'è più la strada di Ruoti, che resta solo nella strofa 2 ("Giro le strade"), e nemmeno nella raffica su "Pacato".
 - **Cervello**: per far cadere il pezzo su "tradito" usando la clip intera servirebbe 1,25x. Per restare entro 1,2x ho saltato i primi 0,16 s della clip, in cui il cervello è fermo.
 
-## File (video completo v5)
+## File (video completo v6)
 
 | File | Durata | Peso | CRF | Note |
 |---|---|---|---|---|
-| `non_mi_fermo_v3_1080x1920.mp4` | 179.70 s | 85.0 MB | 22 | CRF 20 → 117.2 MB (oltre 95 MB), riesportato a CRF 22 |
+| `non_mi_fermo_v3_1080x1920.mp4` | 179.70 s | 82.9 MB | 22 | CRF 20 → 114.3 MB (oltre 95 MB), riesportato a CRF 22 |
 | `taglio_ritornello.mp4` | 29.00 s | 12.9 MB | 20 | CRF 20 al primo tentativo; segmento 63.13–90.12 s del video completo |
-| `taglio_strofa.mp4` | 33.73 s | 25.3 MB | 20 | CRF 20 al primo tentativo; segmento 99.03–130.75 s del video completo |
+| `taglio_strofa.mp4` | 33.73 s | 25.4 MB | 20 | CRF 20 al primo tentativo; segmento 99.03–130.75 s del video completo |
 | `taglio_finale.mp4` | 35.87 s | 16.7 MB | 20 | CRF 20 al primo tentativo; segmento 143.85–179.70 s del video completo |
 | `anteprima_ritornello.mp4` | 20.00 s | 9.1 MB | 20 | 20 s dal primo ritornello |
 | `anteprima_sheet.jpg` | — | — | — | foglio 6x4 di fotogrammi dell'anteprima |
-| `check/*.jpg` | — | — | — | 34 fotogrammi dei punti modificati, nominati con il verso |
+| `preview/*.mp4` | — | — | 28 | anteprime v6 dei tratti modificati (720p) |
+| `check/*.jpg` | — | — | — | fotogrammi di controllo della v5 |
 
 Verifica ffprobe: tutti 1080x1920, 30 fps, H.264 yuv420p, AAC 192 kbps (nominali; ffprobe ne misura ~200), una sola traccia audio (il brano), `+faststart`, sotto i 95 MB.
 
-## Controllo dei bordi (`tools/edge_check.py`)
+Controllo dei bordi sul video completo v6 (`tools/edge_check.py`):
+
+| File | Fotogrammi | Fuori soglia |
+|---|---|---|
+| `non_mi_fermo_v3_1080x1920.mp4` | 5391 | 0 |
+| `taglio_ritornello.mp4` | 870 | 0 |
+| `taglio_strofa.mp4` | 1012 | 0 |
+| `taglio_finale.mp4` | 1076 | 0 |
+| `anteprima_ritornello.mp4` | 600 | 0 |
+
+### Storico v5
+
+### Controllo dei bordi (v5) (`tools/edge_check.py`)
 
 Per ogni fotogramma confronta le 4 colonne di pixel a sinistra e a destra con le colonne vicine (4-11). Un fotogramma è fuori soglia se il bordo differisce dalle vicine più di 2,5 volte quanto le vicine differiscono tra loro, +3 livelli. Sulla v4 lo stesso controllo trovava 275 fotogrammi fuori soglia nel solo taglio della strofa (il tremolio).
 
@@ -125,21 +138,20 @@ Per ogni fotogramma confronta le 4 colonne di pixel a sinistra e a destra con le
 - **Strobo su "chiaro scuro"**: lasciato com'era (immagine invertita per 2 fotogrammi sui beat e mezzi beat). Ora inverte il lampione invece del testo gigante.
 - **Stem vocale**: il modello Demucs non si poteva scaricare da questo ambiente (host bloccato). Ho usato UVR MDX-NET Kim_Vocal_2, scaricato da GitHub.
 
-## Verso → clip
+## Verso → clip (v6)
 
 Dal `--plan`; nessuna sovrapposizione e nessun buco tra gli inserti.
 
 | Verso | Clip | Inizio (s) | Fine (s) | Velocità / note |
 |---|---|---|---|---|
-| (IPNOS sul primo fotogramma del corridoio) | corridoio | 0.00 | 1.95 | colpi a 0,165 e 0,655 s |
-| — | corridoio | 0.00 | 3.20 | fermo, 1.00x, crop 1.25x |
+| — | corridoio_hfr | 0.00 | 3.20 | speed ramp 1,0x → 0,5x (interpolato a 60 fps) |
 | — | porta | 3.20 | 5.29 | 1.15x |
 | Ipnos Ehi / Torno sul pezzo / Forse ci resto nemmeno lo so / Dico le cose quelle che sento | studio | 5.29 | 13.04 | 0.98x, 0.61x, crop 1.35x |
 | Confesso i peccati con il mio accento / Vorrei non ci fosse un domani | microfono | 13.04 | 15.72 | 1.00x |
 | Vorrei non ci fosse un domani / Che tutto finisse oggi / La mente che vede il futuro e perde il presente scava nel niente | tramonto | 15.72 | 19.18 | 0.80x |
 | La mente che vede il futuro e perde il presente scava nel niente / Torno fresco ma non torno quello | pozzo | 19.18 | 22.55 | 0.89x |
-| Torno fresco ma non torno quello / Ma non torno questo e domani resto | muro | 22.55 | 24.66 | 1.00x |
-| Ma non torno questo e domani resto / Dico solo che non voglio il resto | strada | 24.66 | 27.24 | 1.00x, crop 1.5x |
+| Torno fresco ma non torno quello / Ma non torno questo e domani resto | specchi | 22.55 | 25.96 | carrello 1,00 → 1,20, ease-in-out |
+| Dico solo che non voglio il resto | fiches | 25.96 | 27.24 | 1.00x, crop 2.3x |
 | Dico solo che non voglio il resto / Voglio tutto quello che voglio investo / Non voglio fare la fine di questi | fiches | 27.24 | 30.84 | 1.24x, 0.75x, fermo |
 | Finire dentro una bara coi resti | scatola | 30.84 | 32.28 | 0.97x |
 | Finire dentro una bara coi resti | nero | 32.28 | 32.68 |  |
@@ -179,8 +191,8 @@ Dal `--plan`; nessuna sovrapposizione e nessun buco tra gli inserti.
 | Cosa è successo? / Pensavo a domani ho perso qualcosa | specchio | 133.61 | 135.74 | 1.00x, crop 1.7x |
 | Pensavo a domani ho perso qualcosa / Qui dalle mie mani / Aspetto il domani | sabbia | 135.74 | 137.44 | 1.00x |
 | Aspetto il domani / Avrò schemi più chiari | tramonto | 137.44 | 139.57 | 1.00x al contrario |
-| Ma tanto ho capito / È la mente mia che m'ha tradito | pozzo | 139.57 | 144.04 | 0.75x, fermo, crop 1.1x |
-| Senti la voce senti il respiro | wave | 144.04 | 147.22 | generata dallo stem vocale |
+| Ma tanto ho capito / È la mente mia che m'ha tradito | cervello | 139.57 | 143.85 | 1.20x, 0.90x |
+| Senti la voce senti il respiro | wave | 143.85 | 147.22 | generata dallo stem vocale |
 | Prendo la penna scrivo in corsivo / Sai che non mi fermo scrivo in eterno | penna | 147.22 | 152.72 |  |
 | Fino a che non si spegne il cuore / Battico cardiaco conta le ore | candela | 152.72 | 154.44 |  |
 | Battico cardiaco conta le ore / Fino al momento in cui muore | cuore | 154.44 | 157.68 | 1.00x, 1.19x, 1.25x, 1.25x, 1.00x, salto 0.169 s |
