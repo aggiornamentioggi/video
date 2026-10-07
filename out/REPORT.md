@@ -24,10 +24,10 @@ Controllo dei bordi (`tools/edge_check.py`, ora legge l'altezza reale del video)
 - IPNOS: bianca #FFFFFF, al ~25% della larghezza sul primo colpo (0,165 s), centrata al 68% dell'altezza, sopra il corridoio in movimento. Si rimpicciolisce di scatto sui due colpi (0,82 e 0,65) e sfuma sulla coda (1,15–1,85 s) come prima.
 
 **2. Corridoio degli specchi**
-- Su "Torno fresco ma non torno quello / ma non torno questo" (22.55–24.66 s), al posto di muro.mp4, l'immagine del corridoio di specchi, con la stessa color grading.
+- Su "Torno fresco ma non torno quello / ma non torno questo e domani resto" (22.55–25.96 s), al posto di muro.mp4, l'immagine del corridoio di specchi, con la stessa color grading.
 - Carrello in avanti: zoom centrato sul punto di fuga da 1,00 a 1,20 con ease-in-out per tutto il tratto, senza traslazioni né rotazioni. L'immagine è preparata a 1,2x della risoluzione, così lo zoom resta nitido.
 - Su "quello" (23,68 s) luminosità +10% per 4 fotogrammi.
-- Stacco sul beat alla strada su "e domani resto" (24,66 s).
+- Stacco sul beat al primo piano della fiche su "Dico solo" (25,96 s).
 - Nella raffica su "Pacato" l'inquadratura del muro è diventata quella degli specchi (il muro non si vede più prima).
 
 **3. Cervello che si crepa**
@@ -41,15 +41,15 @@ Controllo dei bordi (`tools/edge_check.py`, ora legge l'altezza reale del video)
 - Entra a scatto (micro zoom 1,15 → 1,00 in 4 fotogrammi, come le altre scritte) sul colpo dove entrava IPNOS (174,65 s) e resta fino alla fine, con il fade a nero di 0,5 s insieme all'audio.
 
 **5. Fiches su due versi**
-- "E domani resto" (24,66–25,96 s): la strada come prima, stesso crop (1,5x sul ragazzo) e stesso punto di partenza; ora finisce sul beat di "Dico solo".
+- "E domani resto": restano gli specchi (vedi punto 2); la strada qui non c'è più.
 - "Dico solo che non voglio il resto" (25,96–27,24 s): primo piano sulla fiche rossa in piedi al centro in primo piano. Primi 1,28 s della clip, prima del crollo (la pila resta ferma fino a 1,58 s), quindi niente fermo immagine. Crop centrato sulla fiche (0,47; 0,57) con zoom lentissimo 1,00 → 1,05.
 - "Voglio tutto quello che voglio investo" (da 27,24 s): stacco sul beat alla clip intera, inquadratura completa, dall'inizio, con il crollo sul beat di "investo" come prima.
 - Nitidezza: con la fiche a metà larghezza (crop 2,85x) il dettaglio è troppo morbido (sorgente 720 px). Ho allargato il crop a 2,3x: la fiche occupa circa il 42% della larghezza e resta nitida.
-- La raffica su "Pacato" non include il primo piano della fiche; la sua inquadratura della strada cambia di poco, perché la strada è più corta.
+- La raffica su "Pacato" non include il primo piano della fiche. Ha perso la strada (non più vista prima di quel punto), quindi le clip scorrono una posizione prima.
 
 **Ripieghi v6**
 - **Immagine degli specchi**: "1000322517.png" non c'è su main. L'unica immagine nuova che corrisponde alla descrizione (corridoio buio con specchi ai lati e il ragazzo incappucciato riflesso di spalle) è "Corridoio infinito di specchi e ombre.png": ho usato quella. L'altro file nuovo è il logo ("Logo IPNOS Creative Studio in bianco e nero.png").
-- **Specchi e "e domani resto"**: in un primo momento gli specchi arrivavano fino a "Dico solo". Con l'indicazione successiva (punto 5) "e domani resto" è tornato alla strada, come prima: gli specchi vanno fino a "e" (24,66 s).
+- **Specchi e "e domani resto"**: come richiesto, gli specchi arrivano fino a "Dico solo" (25,96 s). Su questo verso quindi non c'è più la strada di Ruoti, che resta solo nella strofa 2 ("Giro le strade"), e nemmeno nella raffica su "Pacato".
 - **Cervello**: per far cadere il pezzo su "tradito" usando la clip intera servirebbe 1,25x. Per restare entro 1,2x ho saltato i primi 0,16 s della clip, in cui il cervello è fermo.
 
 ## File (video completo v5)

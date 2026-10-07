@@ -220,12 +220,11 @@ fit("microfono", CONF, T_VOR, 0.0, clipend("microfono"))
 ins("tramonto", T_VOR, T_MENTE, map=[(T_VOR, T_MENTE, 0.0, 0.8 * (T_MENTE - T_VOR))])
 T_FRESCO = S(L("Torno fresco"))
 fit("pozzo", T_MENTE, T_FRESCO, 0.0, clipend("pozzo"), zoomramp=(1.0, 1.18))
-T_DOM = S(wt("e", L("Ma non torno questo")))
+T_DOM = S(L("Dico solo che non"))              # v6: specchi anche su "e domani resto"
 QUELLO = wt("quello", T_FRESCO)                 # v6: corridoio degli specchi, carrello in avanti
 ins("specchi", T_FRESCO, T_DOM, pulse_at=QUELLO)
 T_INV = S(L("Voglio tutto quello")); CROLLO_PRIMA = 1.50
-T_DICO = S(L("Dico solo che non"))
-fit("strada", T_DOM, T_DICO, 3.2, clipend("strada"), zoom=1.5, cx=0.45, cy=0.55)   # "e domani resto"
+T_DICO = T_DOM                                  # v6: la strada qui non c'è più (resta nella strofa 2)
 # v6: "Dico solo che non voglio il resto": stretto sulla fiche rossa in piedi in primo piano, dai
 # primi fotogrammi (prima del crollo, a 1,58 s); zoom 2,3x (a 2,85x il dettaglio si sgrana)
 ins("fiches", T_DICO, T_INV, map=[(T_DICO, T_INV, 0.0, min(CROLLO_PRIMA, T_INV - T_DICO))],
