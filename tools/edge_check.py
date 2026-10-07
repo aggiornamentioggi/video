@@ -8,10 +8,11 @@ Uso: python3 tools/edge_check.py VIDEO [VIDEO ...]   -> JSON con l'esito per fil
 import json, subprocess, sys
 import numpy as np
 
-H = 1920
 STRIP = 12
 
 def strips(path):
+    H = int(subprocess.check_output(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                                     "stream=height", "-of", "csv=p=0", path]))
     cmd = ["ffmpeg", "-v", "error", "-i", path, "-filter_complex",
            f"[0:v]split[a][b];[a]crop={STRIP}:ih:0:0[l];[b]crop={STRIP}:ih:iw-{STRIP}:0,hflip[r];"
            "[l][r]hstack", "-f", "rawvideo", "-pix_fmt", "gray", "-"]

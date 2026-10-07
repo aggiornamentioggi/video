@@ -59,7 +59,10 @@ NEW_CLIPS = {"tramonto": "tramonto", "ufficio": "ufficio", "brocca": "brocca", "
              "muro": "muro", "fiches": "The-tall-stack-of-poker", "sabbia": "Fine-sand-keeps",
              "clessidra": "The-thin-stream-of-sand",
              # v5
-             "cuore": "The-glass-heart"}
+             "cuore": "The-glass-heart",
+             # v6
+             "cervello": "The-existing-crack-on-the-plaster", "specchi": "Corridoio infinito di specchi",
+             "logo": "Logo IPNOS Creative Studio"}
 for _k, _p in NEW_CLIPS.items():
     if find_src([_p]): SRC[_k] = find_src([_p])
 OPTIONAL = ["moneta", "goccia", "carte", "petardo", "mare", "lampione", "personaggio", "performance"]
@@ -195,9 +198,15 @@ STUDIO0 = S(TORNO_T - CUFFIE_C)                           # clip studio da 0 a v
 DOOR0 = S(STUDIO0 - 2.1)
 DOOR_LEN = 2.4                                            # porta: solo 0-2,4 s (dopo c'è fumo)
 ce = clipend("corridoio")
-# v5: sotto IPNOS il primo fotogramma del corridoio, fermo; finita la coda d'eco parte da lì
-ins("corridoio", 0.0, DOOR0, map=[(0.0, CORR0, 0.0, 0.0), (CORR0, DOOR0, 0.0, DOOR0 - CORR0)],
-    zoom=1.25, cx=0.5, cy=0.45)
+# v6: il corridoio parte subito dal primo fotogramma, in movimento; speed ramp 1,0x -> 0,5x
+# verso la porta (versione interpolata a 60 fps, corridoio_hfr: niente scatti). Porta e cuffie fisse.
+def corr_speed(u): return 1.0 - 0.5 * (lambda x: x * x * (3 - 2 * x))(min(1.0, max(0.0, (u - 0.30) / 0.70)))
+_cm, _c, _n = [], 0.0, 96
+for _k in range(_n):
+    _a, _b = DOOR0 * _k / _n, DOOR0 * (_k + 1) / _n
+    _c1 = _c + (_b - _a) * corr_speed((_k + 0.5) / _n)
+    _cm.append((_a, _b, _c, _c1)); _c = _c1
+ins("corridoio_hfr", 0.0, DOOR0, map=_cm, zoom=1.25, cx=0.5, cy=0.45, ramp_fine=round(_c, 3))
 ins("porta", DOOR0, STUDIO0, map=[(DOOR0, STUDIO0, 0.0, DOOR_LEN)], zoomramp=(1.0, 1.10))
 CONF = wt("Confesso")
 ins("studio", STUDIO0, CONF, map=[(STUDIO0, TORNO_T, 0.0, CUFFIE_C),       # rallentata quanto serve
@@ -212,7 +221,8 @@ ins("tramonto", T_VOR, T_MENTE, map=[(T_VOR, T_MENTE, 0.0, 0.8 * (T_MENTE - T_VO
 T_FRESCO = S(L("Torno fresco"))
 fit("pozzo", T_MENTE, T_FRESCO, 0.0, clipend("pozzo"), zoomramp=(1.0, 1.18))
 T_DOM = S(wt("e", L("Ma non torno questo")))
-fit("muro", T_FRESCO, T_DOM, 0.0, clipend("muro"))
+QUELLO = wt("quello", T_FRESCO)                 # v6: corridoio degli specchi, carrello in avanti
+ins("specchi", T_FRESCO, T_DOM, pulse_at=QUELLO)
 T_INV = S(L("Voglio tutto quello"))
 fit("strada", T_DOM, T_INV, 3.2, clipend("strada"), zoom=1.5, cx=0.45, cy=0.55)
 T_FIN = wt("Finire")                                      # scatola (v3)
@@ -265,6 +275,7 @@ for g in find_line("Fino a che non si spegne"):
     CAND.append((t0, t1))
 SW = [WORDS[g[0]]["inizio"] for g in find_line("Senti la voce")]
 for k, a in enumerate(SW):
+    if k == 2: a = chorus[1][0]                   # v6: dal beat dello stacco dopo il cervello
     b = PEN[k]; ins("wave", a, b)                 # v5: generata dallo stem vocale
 for k, t0 in enumerate(PEN):
     ins("penna", t0, CAND[k][0])
@@ -349,14 +360,21 @@ T_ASP = S(L("Aspetto il domani")); T_CAP = S(L("Ma tanto ho capito"))
 fit("sabbia", T_PERSO, T_ASP, 0.0, clipend("sabbia"))
 te_ = clipend("tramonto")
 ins("tramonto", T_ASP, T_CAP, map=[(T_ASP, T_CAP, te_, te_ - (T_CAP - T_ASP))])   # al contrario: alba
-fit("pozzo", T_CAP, SW[2], 0.0, clipend("pozzo"), zoom=1.1, cx=0.47, cy=0.5, zoomramp=(1.0, 2.4))
+# v6: cervello di gesso; il pezzo si stacca (4,08 s di clip) su "tradito"; stacco sul beat al ritornello
+TRAD = wt("tradito", T_CAP); CRACK = 4.08; BRAIN_IN = 0.16
+ins("cervello", T_CAP, chorus[1][0], map=[(T_CAP, TRAD, BRAIN_IN, CRACK),
+                                          (TRAD, chorus[1][0], CRACK, clipend("cervello"))])
 
 # --- raffica su "Pacato": tutte le clip viste fino a lì, 2-3 fotogrammi l'una, cambio su ogni beat
 seen = []
 for d in sorted(inserts, key=lambda d: d["t0"]):
-    if d["t0"] >= MONTAGE[0] or "map" not in d: continue
+    if d["t0"] >= MONTAGE[0] or ("map" not in d and d["name"] != "specchi"): continue
+    if d["name"] == "specchi":                    # v6: immagine ferma (al posto del muro)
+        seen.append(("specchi", 0.0, 1.1, 0.5, 0.5)); continue
     m = d["map"][0]; mid_c = (m[2] + m[3]) / 2
-    seen.append((d["name"], mid_c, d.get("zoom", 1.0), d.get("cx", 0.5), d.get("cy", 0.5)))
+    name = "corridoio" if d["name"] == "corridoio_hfr" else d["name"]
+    if d["name"] == "corridoio_hfr": mid_c = 0.0
+    seen.append((name, mid_c, d.get("zoom", 1.0), d.get("cx", 0.5), d.get("cy", 0.5)))
 f0, f1 = fr(MONTAGE[0]), fr(MONTAGE[1])
 anchors = sorted({f0, f1} | {fr(b) for b in GRID if f0 < fr(b) < f1})
 segs = []
@@ -368,7 +386,7 @@ for x0, x1 in zip(anchors[:-1], anchors[1:]):
 seq = []
 for k, (x0, x1) in enumerate(segs):
     name, c, z, cx, cy = seen[k % len(seen)]
-    c = min(c + 0.6 * (k // len(seen)), clipend(name) - 0.2)   # seconda passata: altro punto
+    if name != "specchi": c = min(c + 0.6 * (k // len(seen)), clipend(name) - 0.2)   # seconda passata
     seq.append((x0 - f0, x1 - x0, name, round(c, 3), z, cx, cy))
 ins("raffica", MONTAGE[0], MONTAGE[1], seq=seq)
 
@@ -482,6 +500,13 @@ BW, BH = 360, 640                                  # sfondi a 1/3 di risoluzione
 def prep():
     os.makedirs(PREP, exist_ok=True)
     for name, src in SRC.items():
+        if name == "specchi":                      # 1,2x della risoluzione: lo zoom resta nitido
+            out = os.path.join(PREP, "specchi.png")
+            if not os.path.exists(out):
+                subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", src, "-vf",
+                    f"{CROP},scale={int(W * 1.2)}:{int(H * 1.2)}:flags=lanczos,{GRADE}", "-frames:v", "1", out])
+            continue
+        if name == "logo": continue                # usato così com'è (bianco su nero)
         if name == "penna":
             out = os.path.join(PREP, "penna.png")
             subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", src, "-vf",
@@ -490,6 +515,13 @@ def prep():
             np.save(os.path.join(PREP, "bg_penna.npy"), np.asarray(im)[None])
             continue
         out = os.path.join(PREP, f"{name}.mp4")
+        if name == "corridoio" and not os.path.exists(os.path.join(PREP, "corridoio_hfr.mp4")) \
+                and os.path.exists(out):
+            subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", out, "-vf",
+                "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1", "-an",
+                "-c:v", "libx264", "-crf", "10", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+                os.path.join(PREP, "corridoio_hfr.mp4")])
+        if os.path.exists(out) and "--force" not in ARGS: continue
         subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", src, "-vf",
             f"{CROP},scale={W}:{H}:flags=lanczos,{GRADE}", "-an", "-c:v", "libx264", "-crf", "10",
             "-preset", "veryfast", "-pix_fmt", "yuv420p", out])
@@ -700,6 +732,24 @@ NMF = block_img(["NON MI FERMO"], 190, (255, 255, 255))
 IP = block_img(["IPNOS"], 300, RED, shadow=False)
 CS = block_img(["IPNOS CREATIVE STUDIO"], 40, (255, 255, 255), kind="SemiBold", maxw=1000,
                tracking=0.20, alpha=0.85, shadow=False)
+# v6: sotto NON MI FERMO il logo IPNOS CREATIVE STUDIO (fuso in screen sul nero), 60% della larghezza
+_lg = np.asarray(Image.open(SRC["logo"]).convert("RGB"), np.float32) / 255
+_ys, _xs = np.where(_lg.max(2) > 0.15)
+_pad = int(0.02 * _lg.shape[1])
+_lg = _lg[max(0, _ys.min() - _pad):_ys.max() + _pad, max(0, _xs.min() - _pad):_xs.max() + _pad]
+_lw = int(W * 0.60); _lh = int(round(_lg.shape[0] * _lw / _lg.shape[1]))
+LOGO = np.asarray(Image.fromarray((_lg * 255).astype(np.uint8)).resize((_lw, _lh), Image.LANCZOS), np.float32) / 255
+G_LOGO = 70
+_blk = NMF["h"] + G_LOGO + _lh
+Y_NMF_V6 = H / 2 - _blk / 2 + NMF["h"] / 2
+Y_LOGO = H / 2 - _blk / 2 + NMF["h"] + G_LOGO + _lh / 2
+def paste_logo(frame, k):
+    s_ = [1.15, 1.10, 1.05, 1.0][k] if 0 <= k < 4 else 1.0   # entra a scatto come le altre scritte
+    lg = LOGO if s_ == 1.0 else np.asarray(Image.fromarray((LOGO * 255).astype(np.uint8)).resize(
+        (int(_lw * s_), int(_lh * s_)), Image.BICUBIC), np.float32) / 255
+    h_, w_ = lg.shape[:2]; x0 = int(round(W / 2 - w_ / 2)); y0 = int(round(Y_LOGO - h_ / 2))
+    reg = frame[y0:y0 + h_, x0:x0 + w_]
+    frame[y0:y0 + h_, x0:x0 + w_] = 1 - (1 - reg) * (1 - lg)   # screen: il nero del logo sparisce
 G1, G2 = 40, 60                                   # IPNOS -> studio: almeno 50 px
 blk = NMF["h"] + G1 + IP["h"] + G2 + CS["h"]
 top = H / 2 - blk / 2
@@ -709,8 +759,8 @@ Y_CS = top + NMF["h"] + G1 + IP["h"] + G2 + CS["h"] / 2
 
 # intro v4: IPNOS rosso su nero, stesso font della chiusura. Entra a ~70% della larghezza sul
 # primo colpo e si rimpicciolisce di scatto (ease-out); di nuovo sul secondo; sfuma sulla coda
-IP_INTRO = block_img(["IPNOS"], 400, RED, maxw=int(W * 0.35))     # v5: ~35% della larghezza
-IP_Y = 0.60 * H
+IP_INTRO = block_img(["IPNOS"], 400, (255, 255, 255), maxw=int(W * 0.25))   # v6: bianca, ~25%
+IP_Y = 0.68 * H
 _ipc = {}
 def ipnos_intro(frame, t):
     if not (IP_A <= t < IP_FADE[1]): return
@@ -972,6 +1022,12 @@ class MontageReader:
         self.seq = d["seq"]; self.k = skip; self.buf = {}
     def _load(self, i):
         k0, n, name, c, z, cx, cy = self.seq[i]
+        if name == "specchi":
+            im = Image.open(os.path.join(PREP, "specchi.png")).convert("RGB")
+            iw, ih = im.size; w2, h2 = iw / 1.2 / z, ih / 1.2 / z
+            a = np.asarray(im.resize((W, H), Image.LANCZOS, box=((iw - w2) / 2, (ih - h2) / 2,
+                                                                (iw + w2) / 2, (ih + h2) / 2)))
+            self.buf = {i: np.repeat(a[None], n, 0)}; return
         vf = "null"
         if z > 1.001:
             vf = (f"crop=iw/{z}:ih/{z}:'min(max(iw*{cx}-iw/{2*z},0),iw-iw/{z})':"
@@ -987,6 +1043,24 @@ class MontageReader:
         if i not in self.buf: self._load(i)
         arr = self.buf[i]; j = min(len(arr) - 1, k - self.seq[i][0])
         return arr[j].astype(np.float32) / 255
+    def close(self): pass
+
+class MirrorReader:
+    """corridoio degli specchi: carrello in avanti, zoom 1,00 -> 1,20 sul centro (punto di fuga)
+    con ease-in-out; su "quello" luminosità +10% per 4 fotogrammi"""
+    def __init__(self, d, skip):
+        self.n = fr(d["t1"]) - fr(d["t0"]); self.k = skip; self.f0 = fr(d["t0"])
+        self.pf = fr(d["pulse_at"])
+        self.im = Image.open(os.path.join(PREP, "specchi.png")).convert("RGB")   # 1,2x di W x H
+    def read(self):
+        u = self.k / max(1, self.n - 1); e = u * u * (3 - 2 * u)
+        s_ = 1.0 + 0.20 * e
+        iw, ih = self.im.size; w2, h2 = iw / 1.2 / s_, ih / 1.2 / s_
+        box = ((iw - w2) / 2, (ih - h2) / 2, (iw + w2) / 2, (ih + h2) / 2)
+        a = np.asarray(self.im.resize((W, H), Image.LANCZOS, box=box), np.float32) / 255
+        if 0 <= self.f0 + self.k - self.pf < 4: a = np.clip(a * 1.10, 0, 1)
+        self.k += 1
+        return a
     def close(self): pass
 
 class PenReader:
@@ -1062,7 +1136,7 @@ class Sources:
             if fr(d["t0"]) <= f < fr(d["t1"]):
                 if self.cur[0] != j:
                     if self.cur[1]: self.cur[1].close()
-                    R = {"aggancio": HookReader, "penna": PenReader}.get(d["name"], ClipReader)
+                    R = {"aggancio": HookReader, "penna": PenReader, "specchi": MirrorReader}.get(d["name"], ClipReader)
                     if d["name"] == "nero": R = BlackReader
                     elif d["name"] == "raffica": R = MontageReader
                     elif d["name"] == "wave": R = WaveReader
@@ -1090,10 +1164,8 @@ def render_frame(f, src):
     if f in STROBE_F: frame = 1.0 - frame                  # strobo bianco/nero, 2 fotogrammi
     if fr(TB) <= f < fr(TB_END): paste_block(frame, TEMPO_IMG, Y_TEMPO, f - fr(TB))
     if fr(TB2) <= f < fr(TB_END): paste_block(frame, BAST_IMG, Y_BAST, f - fr(TB2))
-    if f >= fr(HIT1): paste_block(frame, NMF, Y_NMF, f - fr(HIT1))
-    if f >= fr(HIT2): paste_block(frame, IP, Y_IP, f - fr(HIT2))
-    if f >= fr(STUDIO_FADE):
-        paste_block(frame, CS, Y_CS, 99, min(1.0, (f - fr(STUDIO_FADE)) / (0.5 * FPS)))
+    if f >= fr(HIT1): paste_block(frame, NMF, Y_NMF_V6, f - fr(HIT1))
+    if f >= fr(HIT2): paste_logo(frame, f - fr(HIT2))           # v6: logo dove entrava IPNOS
     for g0, amp in GL_FRAMES:
         if g0 <= f < g0 + (4 if amp > 10 else 2): frame = glitch(frame, f - g0, amp, f)
     # zoom punch sulle casse (+4% e ritorno in 4 frame); sobrio nella strofa 1

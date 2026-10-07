@@ -1,8 +1,50 @@
-# REPORT v5: "Non Mi Fermo" (Ipnos)
+# REPORT v6 (anteprime) / v5 (video completo): "Non Mi Fermo" (Ipnos)
 
 Render con `tools/build.py` dalla timeline v5 di `tools/render.py`: è la v4 con main unito (cuore di vetro) e solo le correzioni richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
 
-## File
+## v6: in anteprima (l'export completo non è ancora rifatto)
+
+Il video completo in `out/` è ancora la **v5**: lo riesporto solo dopo "ok export", con le specifiche di sempre. Per ora ci sono solo le anteprime dei tratti modificati in `out/preview/`: 720p, CRF 28, audio AAC 128 kbps, 1 s prima e dopo ogni tratto (l'ultima finisce con il video).
+
+| Anteprima | Tratto modificato | Contenuto | Peso |
+|---|---|---|---|
+| `preview/preview_1_intro.mp4` | 0.00–9.91 s | 0.00–10.91 s | 0.82 MB |
+| `preview/preview_2_specchi.mp4` | 22.55–24.66 s | 21.55–25.66 s | 0.61 MB |
+| `preview/preview_3_cervello.mp4` | 139.57–143.85 s | 138.57–144.85 s | 0.52 MB |
+| `preview/preview_4_finale.mp4` | 172.38–179.70 s | 171.38–179.70 s | 0.29 MB |
+
+Controllo dei bordi (`tools/edge_check.py`, ora legge l'altezza reale del video) su tutte e quattro le anteprime: 0 fotogrammi fuori soglia.
+
+**1. Inizio**
+- Niente fermo immagine: il corridoio parte da 0 s, in movimento, dal primo fotogramma (crop 1,25x come prima).
+- Speed ramp: 1,0x per il primo 30% del tratto, poi rallenta in modo continuo (smoothstep) fino a 0,5x sul taglio alla porta. Usa 0–2.64 s di clip.
+- Interpolazione: versione del corridoio a 60 fps fatta con `minterpolate` (mci, aobmc), quindi anche a 0,5x ogni fotogramma è diverso, senza scatti.
+- Porta (3,20 s) e cuffie su "Torno" (8,80 s) restano dov'erano.
+- IPNOS: bianca #FFFFFF, al ~25% della larghezza sul primo colpo (0,165 s), centrata al 68% dell'altezza, sopra il corridoio in movimento. Si rimpicciolisce di scatto sui due colpi (0,82 e 0,65) e sfuma sulla coda (1,15–1,85 s) come prima.
+
+**2. Corridoio degli specchi**
+- Su "Torno fresco ma non torno quello" (22.55–24.66 s), al posto di muro.mp4, l'immagine del corridoio di specchi, con la stessa color grading.
+- Carrello in avanti: zoom centrato sul punto di fuga da 1,00 a 1,20 con ease-in-out per tutto il tratto, senza traslazioni né rotazioni. L'immagine è preparata a 1,2x della risoluzione, così lo zoom resta nitido.
+- Su "quello" (23,68 s) luminosità +10% per 4 fotogrammi.
+- Stacco sul beat alla strada (24,66 s).
+- Nella raffica su "Pacato" l'inquadratura del muro è diventata quella degli specchi (il muro non si vede più prima).
+
+**3. Cervello che si crepa**
+- Su "Ma tanto ho capito / è la mente mia / che m'ha tradito" (139.57–143.85 s), al posto del pozzo.
+- Il pezzo di gesso inizia a staccarsi a 4,08 s di clip e cade esattamente su "tradito" (142,84 s): 1,20x prima, 0,90x dopo. Nessuno zoom aggiunto.
+- Stacco netto sul beat del ritornello (143,85 s). La waveform del terzo ritornello ora parte da quel beat invece che da "Senti" (144,04 s), così non resta un buco.
+
+**4. Finale con il logo**
+- "NON MI FERMO" resta com'era. Al posto di "IPNOS" rosso e "IPNOS CREATIVE STUDIO" c'è il logo, ritagliato sul contenuto, al 60% della larghezza, centrato sotto "NON MI FERMO".
+- Fusione in screen sul nero, quindi il riquadro non si vede. Il blocco sta tra il 42% e il 58% circa dell'altezza, dentro la fascia 20–80%.
+- Entra a scatto (micro zoom 1,15 → 1,00 in 4 fotogrammi, come le altre scritte) sul colpo dove entrava IPNOS (174,65 s) e resta fino alla fine, con il fade a nero di 0,5 s insieme all'audio.
+
+**Ripieghi v6**
+- **Immagine degli specchi**: "1000322517.png" non c'è su main. L'unica immagine nuova che corrisponde alla descrizione (corridoio buio con specchi ai lati e il ragazzo incappucciato riflesso di spalle) è "Corridoio infinito di specchi e ombre.png": ho usato quella. L'altro file nuovo è il logo ("Logo IPNOS Creative Studio in bianco e nero.png").
+- **Specchi oltre il verso**: il verso finisce su "quello" (23,92 s), ma la clip successiva (la strada, che non va toccata) parte a 24,66 s. Gli specchi restano fino a lì, con lo zoom distribuito su tutto il tratto, invece di lasciare un buco o spostare la strada.
+- **Cervello**: per far cadere il pezzo su "tradito" usando la clip intera servirebbe 1,25x. Per restare entro 1,2x ho saltato i primi 0,16 s della clip, in cui il cervello è fermo.
+
+## File (video completo v5)
 
 | File | Durata | Peso | CRF | Note |
 |---|---|---|---|---|
