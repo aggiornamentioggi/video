@@ -54,8 +54,10 @@ NEW_CLIPS = {"tramonto": "tramonto", "ufficio": "ufficio", "brocca": "brocca", "
              "scatola": "The-wooden-lid", "pozzo": "A-small-pebble", "mappamondo": "Cinematic-dark-moody",
              "microfono": "microfono", "vetro": "vetro", "corda": "corda", "sedia": "sedia",
              "lampione": "lampione", "soundwave": "soundwave", "orologi": "All-the-clock-hands",
-             "moneta": "The-old-coin-spins"}
-# muro.mp4: riserva, non usato
+             "moneta": "The-old-coin-spins",
+             # v4
+             "muro": "muro", "fiches": "The-tall-stack-of-poker", "sabbia": "Fine-sand-keeps",
+             "clessidra": "The-thin-stream-of-sand"}
 for _k, _p in NEW_CLIPS.items():
     if find_src([_p]): SRC[_k] = find_src([_p])
 OPTIONAL = ["moneta", "goccia", "carte", "petardo", "mare", "lampione", "personaggio", "performance"]
@@ -143,8 +145,6 @@ def in_chorus(t): return section(t)[0].startswith("ritornello")
 inserts = []
 def ins(name, t0, t1, **o): inserts.append(dict(name=name, t0=t0, t1=t1, **o))
 
-ins("aggancio", 0.0, HOOK)
-
 def content(tau, t0, ramp=True, sp=1.0):
     """secondi di clip consumati dopo tau secondi di inserto (speed ramp 60% -> 100%)"""
     if not ramp: return tau * sp
@@ -164,87 +164,184 @@ def black(t0, t1): ins("nero", t0, t1)
 def wt(text, after=0.0): return word_t(text, after)
 def L(prefix): return WORDS[find_line(prefix)[0][0]]["inizio"]     # inizio della riga
 
-# --- intro: corridoio -> porta (zoom lento + flash 4 frame) -> cuffie su "pezzo"
-PEZZO = wt("pezzo")                                       # 9.36
-KICKS0 = [k for k, s in KICKS if k < PEZZO]
-DOOR_IN = float(min(KICKS0, key=lambda k: abs((PEZZO - k) - 2.4)))   # cassa a ~2,4 s da "pezzo"
-DOOR_LEN = 2.4                                            # solo 0-2,4 s: dopo c'è fumo
-cl = clip_len("corridoio") - 0.04
-corr = lambda t: (t - HOOK) * cl / (DOOR_IN - HOOK)
-CA, CB = 3.3, (DOOR_IN + 3.3) / 2 + 0.6                   # tre inquadrature del corridoio
-for (a, b, z, cx, cy) in [(HOOK, CA, 1.0, 0.5, 0.5), (CA, CB, 1.25, 0.5, 0.45), (CB, DOOR_IN, 1.5, 0.5, 0.42)]:
-    ins("corridoio", a, b, map=[(a, b, corr(a), corr(b))], zoom=z, cx=cx, cy=cy)
-ins("porta", DOOR_IN, PEZZO, map=[(DOOR_IN, PEZZO, 0.0, DOOR_LEN)], zoomramp=(1.0, 1.10))
-FLASHES = {fr(PEZZO) - 4 + k: v for k, v in enumerate([0.55, 1.0, 1.0, 0.75])}
-STUDIO_IN = 3.0                                           # cuffie in testa a 3,25 di clip
-ins("studio", PEZZO, CUT_S1, map=[(PEZZO, CUT_S1, STUDIO_IN, STUDIO_IN + CUT_S1 - PEZZO)],
+# ---------------------------------------------------------------- v4
+# Tagli nuovi sul beat (S = beat più vicino); dove un taglio confina con un inserto v3
+# rimasto uguale si usa il suo bordo.
+S = snap
+def clipend(name): return clip_len(name) - 0.05
+
+def fit(name, t0, t1, c0, c1, minsp=0.75, **o):
+    """c0 -> c1 (al più) su [t0, t1]. Clip lunga: velocità 1x. Corta: rallentata fino a
+    minsp; se non basta, a minsp fino alla fine e poi ultimo fotogramma tenuto, con uno
+    zoom lento lungo tutto l'inserto (mai in loop)."""
+    slot, avail = t1 - t0, c1 - c0
+    if avail >= slot:
+        ins(name, t0, t1, map=[(t0, t1, c0, c0 + slot)], **o); return
+    if avail / slot >= minsp - 1e-6:
+        ins(name, t0, t1, map=[(t0, t1, c0, c1)], **o); return
+    te = t0 + avail / minsp
+    o.setdefault("zoomramp", (1.0, 1.10))
+    ins(name, t0, t1, map=[(t0, te, c0, c1), (te, t1, c1, c1)], tenuta=round(t1 - te, 2), **o)
+
+# --- intro: IPNOS su nero (due colpi dall'audio) -> corridoio -> porta -> studio, cuffie su "Torno"
+IP_A, IP_B = 0.165, 0.655          # attacchi dei due "IPNOS" (banda 4-12 kHz e 400-1000 Hz)
+IP_FADE = (1.15, 1.85)             # coda d'eco: la scritta sfuma
+TORNO_T = wt("Torno")                                     # 8.80
+CUFFIE_C = 3.42                                           # clip studio: cuffie sulla testa
+CORR0 = float(GRID[GRID >= IP_FADE[1] - 0.05][0])         # primo beat dopo la coda
+STUDIO0 = S(TORNO_T - CUFFIE_C)                           # clip studio da 0 a velocità ~1x
+DOOR0 = S(STUDIO0 - 2.1)
+DOOR_LEN = 2.4                                            # porta: solo 0-2,4 s (dopo c'è fumo)
+ce = clipend("corridoio")
+ins("corridoio", CORR0, DOOR0, map=[(CORR0, DOOR0, ce - (DOOR0 - CORR0), ce)], zoom=1.25, cx=0.5, cy=0.45)
+ins("porta", DOOR0, STUDIO0, map=[(DOOR0, STUDIO0, 0.0, DOOR_LEN)], zoomramp=(1.0, 1.10))
+CONF = wt("Confesso")
+ins("studio", STUDIO0, CONF, map=[(STUDIO0, TORNO_T, 0.0, CUFFIE_C),       # rallentata quanto serve
+                                  (TORNO_T, CONF, CUFFIE_C, clipend("studio"))],
     zoom=1.35, cx=0.48, cy=0.30)
+FLASHES = {}
 
 # --- strofa 1
-a = wt("Confesso"); mapped("microfono", a, a + 2.26, 0.0, 2.26)
-a = wt("scava"); b = WORDS[[i for i, w in enumerate(WORDS) if clean(w["parola"]) == "niente"][0]]["fine"]
-mapped("pozzo", a, b, 0.70, 2.30)                         # il sasso cade da "scava" a fine "niente"
-a = wt("Finire"); r = wt("resti", a)
+T_VOR = S(L("Vorrei non ci fosse")); T_MENTE = S(L("La mente"))
+fit("microfono", CONF, T_VOR, 0.0, clipend("microfono"))
+ins("tramonto", T_VOR, T_MENTE, map=[(T_VOR, T_MENTE, 0.0, 0.8 * (T_MENTE - T_VOR))])
+T_FRESCO = S(L("Torno fresco"))
+fit("pozzo", T_MENTE, T_FRESCO, 0.0, clipend("pozzo"), zoomramp=(1.0, 1.18))
+T_DOM = S(wt("e", L("Ma non torno questo")))
+fit("muro", T_FRESCO, T_DOM, 0.0, clipend("muro"))
+T_INV = S(L("Voglio tutto quello"))
+fit("strada", T_DOM, T_INV, 3.2, clipend("strada"), zoom=1.5, cx=0.45, cy=0.55)
+T_FIN = wt("Finire")                                      # scatola (v3)
+CROLLO = 1.58                                             # la pila inizia a cadere
+TC = S(wt("investo"))
+fe = clipend("fiches"); tail = (fe - CROLLO) / 0.75
+if T_FIN - TC <= tail + 1e-6:
+    fmap = [(T_INV, TC, 0.0, CROLLO), (TC, T_FIN, CROLLO, CROLLO + max(0.75, (fe - CROLLO) / (T_FIN - TC)) * (T_FIN - TC))]
+else:
+    fmap = [(T_INV, TC, 0.0, CROLLO), (TC, TC + tail, CROLLO, fe), (TC + tail, T_FIN, fe, fe)]
+ins("fiches", T_INV, T_FIN, map=fmap, zoomramp=(1.0, 1.06))
+a = T_FIN; r = wt("resti", a)
 mapped("scatola", a, r, 0.0, 1.40); black(r, wt("Voglio", r))
 a = wt("Voglio", r); p = wt("parte", a); e = wt("In", p)
-ins("vetro", a, e, map=[(a, p, 0.0, 1.5), (p, e, 1.5, 1.5 + e - p)])   # B: niente taglio in testa
+ins("vetro", a, e, map=[(a, p, 0.0, 1.5), (p, e, 1.5, 1.5 + e - p)])   # B: 1,9x fino all'impronta
+T_ARTE = e; T_SBATTO = S(L("Per sta roba"))
+fit("studio", T_ARTE, T_SBATTO, 0.3, 2.6, zoom=2.2, cx=0.80, cy=0.36)       # stretto sull'attrezzatura
 a = L("Solo soldato"); bt = wt("buttato", a); e = L("Pacato")
+fit("microfono", T_SBATTO, a, 1.6, clipend("microfono"), zoom=1.25, cx=0.6, cy=0.5, zoomramp=(1.0, 1.15))
 mapped("mano", a, e, 3.0 - (bt - a), 3.0 + (e - bt))       # stretta (3,0 s di clip) su "buttato"
-a = e; tn = wt("tornato", a); e = wt("Lavorare", a)
-mapped("sedia", a, e, 1.5 - (tn - a), 1.5 + (e - tn))      # lampada (1,5) su "tornato"
-a = e; e = wt("Dentro", a); mapped("ufficio", a, e, 0.0, e - a)
+T_PAC = e; T_LAV = wt("Lavorare", a)
+MONTAGE = (T_PAC, T_LAV)                                  # raffica: riempita più sotto
+a = T_LAV; e = wt("Dentro", a); mapped("ufficio", a, e, 0.0, e - a)
 a = e; e = wt("Gioco", a); mapped("brocca", a, e, 0.0, e - a)
-a = e; v = wt("il", a); mapped("carte", a, v, 0.0, v - a); e = wt("Devi", a); black(v, e)
-a = e; e = wt("Fato", a)
+a = e; e = wt("Devi", a); mapped("carte", a, e, 0.0, clipend("carte"))   # tutta la clip
+a = e; e = wt("Sleghiamo", a); TOLGO = wt("tolgo", a)
 COIN_BAD = {26, 34, 41, 42}                                # fotogrammi deformati (a 24 fps)
-COIN = [k for k in range(22, 53) if k not in COIN_BAD]     # 0,9-2,2 s
-ins("moneta", a, e, frames=COIN, speed=0.5)               # metà velocità, poi nero se serve
+COIN = [k for k in range(22, 73) if k not in COIN_BAD]
+ins("moneta", a, e, frames=COIN, speed=0.5, ferma=TOLGO)  # metà velocità, fermo su "tolgo"
+FLASHES.update({fr(TOLGO) + k: v for k, v in enumerate([1.0, 0.85, 0.6, 0.35, 0.15])})
 a = wt("Sleghiamo"); u = wt("umani", a); e = wt("Corsa", a)
 mapped("corda", a, e, 2.0 - (u - a), 2.0 + (e - u))        # flash dello strappo su "umani"
 a = e; e = wt("Sotto", a); oe = clip_len("orologi") - 0.04; mapped("orologi", a, e, oe - (e - a), oe)   # taglio in testa
 a = e; pt = wt("petardo", a); e = wt("Morite", a)
 mapped("mappamondo", a, e, 2.79 - (pt - a), 2.79 + (e - pt))    # esplosione su "petardo"
+T_MOR = e; T_RIT1 = wt("Senti", T_MOR)
+black(T_MOR, T_RIT1)
 
-# --- ritornelli
-for g in find_line("Prendo la penna"):
-    a, b = line_span(g); ins("penna", snap(a), snap(b))
+# testo grande al centro, una frase alla volta (su nero): (t0, t1, [(riga, colore)])
+WHITE = (255, 255, 255)
+BIG = [(T_MOR, wt("Sono", T_MOR), [("MORITE", WHITE), ("CONTENTI", WHITE)]),
+       (wt("Sono", T_MOR), wt("Fatevi", T_MOR), [("SONO IL", WHITE), ("SALVATORE", WHITE)]),
+       (wt("Fatevi", T_MOR), T_RIT1, [("FATEVI", WHITE), ("ONORE", WHITE)])]
+
+# --- ritornelli: nessuno sfondo sfocato. soundwave fino alla penna, penna fino alla candela,
+# corridoio rosso da "Battico" alla riga dopo
+PEN = [snap(line_span(g)[0]) for g in find_line("Prendo la penna")]
+CAND = []
 for g in find_line("Fino a che non si spegne"):
     a, b = line_span(g); t0, t1 = snap(a), snap(b)
     cuore = WORDS[g[-1]]["inizio"]
     ins("candela", t0, t1, inp=max(0.0, SPEGNE - content(cuore - t0, t0)), ramp=True)
-for g in find_line("Senti la voce"):                       # soundwave: "Senti" -> fine "respiro"
-    a = WORDS[g[0]]["inizio"]; b = WORDS[g[-1]]["fine"]
-    mapped("soundwave", a, b, 0.0, b - a)
-for g in find_line("Battico cardiaco"):                    # ultimo ritornello: corridoio in rosso
-    a = snap(WORDS[g[0]]["inizio"])
-    if a >= chorus[1][0]:
-        ins("corridoio", a, a + 4 * PERIOD, inp=2.0, ramp=True, zoom=1.3, cx=0.5, cy=0.45, grade="red")
+    CAND.append((t0, t1))
+SW = [WORDS[g[0]]["inizio"] for g in find_line("Senti la voce")]
+for k, a in enumerate(SW):
+    b = PEN[k]; mapped("soundwave", a, b, 0.0, b - a)
+for k, t0 in enumerate(PEN):
+    ins("penna", t0, CAND[k][0])
+T_STR2 = chorus[0][1]
+NEXT = [SW[1], T_STR2, SW[3], CLOSE]
+REDV = [(0.3, 1.3, 0.5, 0.45), (2.6, 1.5, 0.45, 0.5), (2.0, 1.3, 0.5, 0.45), (1.4, 1.15, 0.5, 0.5)]
+for k, (c0, z, cx, cy) in enumerate(REDV):
+    a, b = CAND[k][1], NEXT[k]
+    ins("corridoio", a, b, map=[(a, b, c0, c0 + b - a)], zoom=z, cx=cx, cy=cy, grade="red")
 
 # --- strofa 2
-a = snap(word_t("Cambierò")); b = snap(line_span(find_line("Io Non voglio mai assomigliare")[0])[1])
+VERSI = [("mare", "Dentro la testa", None), ("maschera", "Odio lo standard", "Voglio le robe"),
+         ("strada", "Giro le strade", None)]
+for name, first, last in VERSI:                 # come nella v3 (sul beat, fino a 0,8x)
+    g0 = find_line(first)[0]; g1 = find_line(last)[0] if last else g0
+    a = snap(WORDS[g0[0]]["inizio"]); b = snap(line_span(g1)[1])
+    f_ = a + clip_len(name) / 0.8
+    if f_ < b: b = float(GRID[GRID <= f_ + 1e-6][-1])
+    ins(name, a, b, inp=0.0, ramp=False, slow08=True)
+MARE0 = [d for d in inserts if d["name"] == "mare"][0]
+fit("studio", T_STR2, MARE0["t0"], 3.8, clipend("studio"), zoom=1.0)      # cuffie, inquadratura larga
+T_LAMP = L("Un giorno tutto")
+black(MARE0["t1"], T_LAMP)
+a = L("Non mi fotte"); b = L("Che sia chiaro"); c = L("Vedo il chiaro"); d_ = L("Che diventa")
+BIG += [(a, b, [("NON MI FOTTE", WHITE), ("UN CAZZO", WHITE), ("DI NESSUNO", WHITE)]),
+        (b, c, [("CHE SIA CHIARO", WHITE), ("GIURO", WHITE)]),
+        (c, d_, [("VEDO IL", WHITE), ("CHIARO SCURO", WHITE)]),
+        (d_, T_LAMP, [("CHE DIVENTA", WHITE), ("SEMPRE UN PO'", WHITE), ("PIÙ SCURO", RED)])]
+SHAKE_BIG = (a, T_LAMP)
+STROBE = (wt("chiaro", c), d_)                            # "chiaro scuro": lampi sul beat
+a = T_LAMP; bu = wt("buio", a); e = wt("Non", bu)
+mapped("lampione", a, e, 1.87 - (bu - a), 1.87 + (e - bu))  # spegnimento su "buio"
+T_SPEC = S(L("Sono un artista")); T_TV = S(word_t("Cambierò"))
+fit("brocca", e, T_SPEC, 2.2, clipend("brocca"), zoom=2.3, cx=0.5, cy=0.47)   # livello dell'acqua
+fit("specchio", T_SPEC, T_TV, 0.0, clipend("specchio"))
+a = T_TV; b = snap(line_span(find_line("Io Non voglio mai assomigliare")[0])[1])
 mid = snap((a + b) / 2)                          # mai la stessa inquadratura > 4 s
 ins("tv", a, mid, inp=0.0, ramp=True)
 ins("tv", mid, b, inp=content(mid - a, a), ramp=False, zoom=1.45, cx=0.48, cy=0.47)
-a = L("Un giorno tutto"); bu = wt("buio", a); e = wt("Non", bu)
-mapped("lampione", a, e, 1.87 - (bu - a), 1.87 + (e - bu))  # spegnimento su "buio"
-# Clip sui versi come nella v2 (inizio e fine sul beat, rallentate fino a 0,8x, mai in loop)
-VERSI = [("tramonto", "Vorrei non ci fosse", "Che tutto finisse"),
-         ("mare", "Dentro la testa", None), ("specchio", "Sono un artista", "Senza un po"),
-         ("maschera", "Odio lo standard", "Voglio le robe"), ("strada", "Giro le strade", None),
-         ("torcia", "Cerco i dettagli", None), ("foto", "L'istante presente", None)]
-for name, first, last in VERSI:
-    if name not in SRC: continue
-    g0 = find_line(first)[0]; g1 = find_line(last)[0] if last else g0
-    a = snap(WORDS[g0[0]]["inizio"]); b = snap(line_span(g1)[1])
-    fit = a + clip_len(name) / 0.8
-    if fit < b: b = float(GRID[GRID <= fit + 1e-6][-1])
-    ins(name, a, b, inp=0.0, ramp=False, slow08=True)
+T_CERCO = S(L("Cerco i dettagli")); T_DUB = S(L("Ma dubito")); T_IST = S(L("L'istante"))
+fit("torcia", T_CERCO, T_DUB, 0.0, clipend("torcia"))
+ins("clessidra", T_DUB, T_IST, map=[(T_DUB, T_IST, 0.0, 1.42)])   # solo la prima metà, rallentata
+T_COSA = S(L("Cosa è successo")); T_PERSO = S(wt("ho", L("Pensavo a domani")))
+fit("foto", T_IST, T_COSA, 0.0, clipend("foto"))         # fino alla foto bruciata (fine clip)
+fit("specchio", T_COSA, T_PERSO, 0.8, clipend("specchio"), zoom=1.7, cx=0.30, cy=0.5)
+T_ASP = S(L("Aspetto il domani")); T_CAP = S(L("Ma tanto ho capito"))
+fit("sabbia", T_PERSO, T_ASP, 0.0, clipend("sabbia"))
+te_ = clipend("tramonto")
+ins("tramonto", T_ASP, T_CAP, map=[(T_ASP, T_CAP, te_, te_ - (T_CAP - T_ASP))])   # al contrario: alba
+fit("pozzo", T_CAP, SW[2], 0.0, clipend("pozzo"), zoom=1.1, cx=0.47, cy=0.5, zoomramp=(1.0, 2.4))
 
+# --- raffica su "Pacato": tutte le clip viste fino a lì, 2-3 fotogrammi l'una, cambio su ogni beat
+seen = []
+for d in sorted(inserts, key=lambda d: d["t0"]):
+    if d["t0"] >= MONTAGE[0] or "map" not in d: continue
+    m = d["map"][0]; mid_c = (m[2] + m[3]) / 2
+    seen.append((d["name"], mid_c, d.get("zoom", 1.0), d.get("cx", 0.5), d.get("cy", 0.5)))
+f0, f1 = fr(MONTAGE[0]), fr(MONTAGE[1])
+anchors = sorted({f0, f1} | {fr(b) for b in GRID if f0 < fr(b) < f1})
+segs = []
+for x0, x1 in zip(anchors[:-1], anchors[1:]):
+    x = x0
+    while x < x1:
+        n = 3 if x1 - x >= 5 or x1 - x == 3 else min(2, x1 - x)
+        segs.append((x, min(x1, x + n))); x += n
+seq = []
+for k, (x0, x1) in enumerate(segs):
+    name, c, z, cx, cy = seen[k % len(seen)]
+    c = min(c + 0.6 * (k // len(seen)), clipend(name) - 0.2)   # seconda passata: altro punto
+    seq.append((x0 - f0, x1 - x0, name, round(c, 3), z, cx, cy))
+ins("raffica", MONTAGE[0], MONTAGE[1], seq=seq)
+
+# niente sovrapposizioni: ogni inserto finisce dove inizia il successivo
 inserts.sort(key=lambda d: d["t0"])
 
 # ---------------------------------------------------------------- sfondi sfocati in movimento
-POOLS = {"strofa1": ["studio", "corridoio"], "ritornello1": ["candela", "penna"],
-         "strofa2": ["strada", "tv"], "ritornello2": ["candela", "penna"]}
+# v4: nessuno sfondo scurito o sfocato; ogni tratto ha la sua clip (o nero con testo grande)
+POOLS = {}
 SEG_BEATS = {"strofa1": 6, "ritornello1": 4, "strofa2": 4, "ritornello2": 2}
 bg = []
 _brng = np.random.default_rng(11)
@@ -305,6 +402,9 @@ for p, ix in enumerate(phrases):
     end = nxt if nxt - WORDS[ix[-1]]["inizio"] < 1.4 else WORDS[ix[-1]]["inizio"] + 1.0
     if a < TB <= end: end = TB
     end = min(end, CLOSE)
+    if any(b0 - 0.05 <= a < b1 for b0, b1, _ in BIG): continue         # lì c'è il testo grande
+    for b0, b1, _ in BIG:
+        if a < b0 < end: end = b0
     PHR.append(dict(ix=ix, f0=fr(a), f1=fr(end), entry=ENTRIES[p % 4],
                     side=1 if (p // 4) % 2 == 0 else -1, xoff=float(_prng.uniform(-40, 40))))
 
@@ -319,7 +419,15 @@ for name, t0, t1, lvl in SECTIONS:
         for k, s in KICKS:
             if t0 <= k < t1 and s > 0.6 and k - last > 8 * PERIOD * (0.5 if lvl == 4 else 1):
                 GL_FRAMES.append((fr(k), 7)); last = k
-# Nessun flash bianco: tolti su richiesta (troppo forti)
+# testo grande della strofa 2: glitch a ogni frase e sui beat
+for b0, b1, _ in BIG:
+    if SHAKE_BIG[0] - 0.01 <= b0 < SHAKE_BIG[1]:
+        GL_FRAMES.append((fr(b0), 16))
+        GL_FRAMES += [(fr(g), 7) for g in GRID if b0 + 0.1 < g < b1 - 0.05]
+STROBE_F = set()
+for g in GRID[(GRID >= STROBE[0] - 0.12) & (GRID < STROBE[1])]:         # lampi sul beat
+    for h in (g, g + PERIOD / 2):
+        if STROBE[0] - 0.12 <= h < STROBE[1]: STROBE_F |= {fr(h), fr(h) + 1}
 
 PLAN = {"durata_video": DUR_V, "frames": N,
         "sezioni": [(s[0], round(s[1], 2), round(min(s[2], DUR_V), 2), s[3]) for s in SECTIONS],
@@ -571,6 +679,30 @@ Y_NMF = top + NMF["h"] / 2
 Y_IP = top + NMF["h"] + G1 + IP["h"] / 2
 Y_CS = top + NMF["h"] + G1 + IP["h"] + G2 + CS["h"] / 2
 
+# intro v4: IPNOS rosso su nero, stesso font della chiusura. Entra a ~70% della larghezza sul
+# primo colpo e si rimpicciolisce di scatto (ease-out); di nuovo sul secondo; sfuma sulla coda
+IP_INTRO = block_img(["IPNOS"], 700, RED, maxw=int(W * 0.70), shadow=False)
+_ipc = {}
+def ipnos_intro(frame, t):
+    if not (IP_A <= t < IP_FADE[1]): return
+    s = 1.0 - 0.18 * ease((t - IP_A) / 0.15)
+    if t >= IP_B: s = 0.82 - 0.17 * ease((t - IP_B) / 0.15)
+    op = 1.0 if t < IP_FADE[0] else max(0.0, 1 - (t - IP_FADE[0]) / (IP_FADE[1] - IP_FADE[0]))
+    key = round(s, 3)
+    if key not in _ipc: _ipc[key] = zoomed(IP_INTRO, key)
+    C, A = _ipc[key]
+    bx0, by0, bx1, by1 = IP_INTRO["bbox"]
+    paste_pm(frame, C, A, W / 2 - (bx0 + bx1) / 2 * key, H / 2 - (by0 + by1) / 2 * key, op)
+
+# testo grande al centro (una frase alla volta)
+BIG_IMG = []
+for b0, b1, rows in BIG:
+    imgs = [block_img([t], 230, col, maxw=960) for t, col in rows]
+    gap = 22; tot = sum(im["h"] for im in imgs) + gap * (len(imgs) - 1)
+    y = H / 2 - tot / 2; ys = []
+    for im in imgs: ys.append(y + im["h"] / 2); y += im["h"] + gap
+    BIG_IMG.append((fr(b0), fr(b1), list(zip(imgs, ys))))
+
 # ---------------------------------------------------------------- effetti di frame
 yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
 _r = np.sqrt(((xx - W / 2) / (W / 2)) ** 2 + ((yy - H / 2) / (H / 2)) ** 2) / math.sqrt(2)
@@ -686,7 +818,8 @@ class MapReader:
         for k in range(self.n):
             t = (fr(d["t0"]) + k) / FPS
             if "frames" in d:
-                j = int(math.floor(k * sf * d["speed"] / FPS + 1e-6))
+                kk = min(k, fr(d["ferma"]) - fr(d["t0"])) if "ferma" in d else k   # fermo immagine
+                j = int(math.floor(kk * sf * d["speed"] / FPS + 1e-6))
                 idx.append(d["frames"][j] if j < len(d["frames"]) else None)
                 continue
             c = None
@@ -705,7 +838,19 @@ class MapReader:
         self.p = subprocess.Popen(["ffmpeg", "-v", "error", "-i", src, "-vf", vf, "-f", "rawvideo",
                                    "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         self.pos = -1; self.cur = None
+        self.red = d.get("grade") == "red"
+        live = [j for j in idx[skip:] if j is not None]
+        self.cache = None
+        if any(b < a for a, b in zip(live, live[1:])):     # clip al contrario: fotogrammi in memoria
+            need, self.cache = set(live), {}
+            while self.pos < max(need):
+                buf = self.p.stdout.read(W * H * 3)
+                if len(buf) < W * H * 3: break
+                self.pos += 1
+                if self.pos in need: self.cache[self.pos] = buf
     def _seek(self, j):
+        if self.cache is not None:
+            self.cur = self.cache.get(j, self.cache.get(min(self.cache, key=lambda x: abs(x - j)))); return
         while self.pos < j:
             buf = self.p.stdout.read(W * H * 3)
             if len(buf) < W * H * 3: break
@@ -720,8 +865,31 @@ class MapReader:
         if zr:
             s = zr[0] + (zr[1] - zr[0]) * k / max(1, self.n - 1)
             if s > 1.001: a = punch(a, s)
-        return a
+        return to_red(a) if self.red else a
     def close(self): self.p.kill(); self.p.wait()
+
+class MontageReader:
+    """raffica: seq = [(fotogramma d'inizio, n fotogrammi, clip, s di clip, zoom, cx, cy)]"""
+    def __init__(self, d, skip):
+        self.seq = d["seq"]; self.k = skip; self.buf = {}
+    def _load(self, i):
+        k0, n, name, c, z, cx, cy = self.seq[i]
+        vf = "null"
+        if z > 1.001:
+            vf = (f"crop=iw/{z}:ih/{z}:'min(max(iw*{cx}-iw/{2*z},0),iw-iw/{z})':"
+                  f"'min(max(ih*{cy}-ih/{2*z},0),ih-ih/{z})',scale={W}:{H}:flags=lanczos")
+        raw = subprocess.check_output(["ffmpeg", "-v", "error", "-ss", f"{c:.3f}", "-i",
+              os.path.join(PREP, f"{name}.mp4"), "-vf", f"{vf},fps={FPS}", "-frames:v", str(n),
+              "-f", "rawvideo", "-pix_fmt", "rgb24", "-"])
+        fr_ = np.frombuffer(raw, np.uint8).reshape(-1, H, W, 3)
+        self.buf = {i: fr_}
+    def read(self):
+        k = self.k; self.k += 1
+        i = max(j for j, s_ in enumerate(self.seq) if s_[0] <= k)
+        if i not in self.buf: self._load(i)
+        arr = self.buf[i]; j = min(len(arr) - 1, k - self.seq[i][0])
+        return arr[j].astype(np.float32) / 255
+    def close(self): pass
 
 class PenReader:
     """immagine ferma: push in 1.00 -> 1.08 verso il pennino e tremolio di luce (la mano è ferma)"""
@@ -798,6 +966,7 @@ class Sources:
                     if self.cur[1]: self.cur[1].close()
                     R = {"aggancio": HookReader, "penna": PenReader}.get(d["name"], ClipReader)
                     if d["name"] == "nero": R = BlackReader
+                    elif d["name"] == "raffica": R = MontageReader
                     elif "map" in d or "frames" in d: R = MapReader
                     self.cur = (j, R(d, f - fr(d["t0"])))
                 return self.cur[1].read()
@@ -821,6 +990,14 @@ def render_frame(f, src):
         lk = leak(t, (0.10 if sec[3] == 2 else 0.16) + 0.6 * (p - 0.04))
         frame = 1 - (1 - frame) * (1 - lk)
     if f >= fr(HOOK): draw_phrases(frame, f)
+    ipnos_intro(frame, t)
+    for g0, g1, rows in BIG_IMG:
+        if g0 <= f < g1:
+            for im, y in rows: paste_block(frame, im, y, f - g0)
+    if fr(SHAKE_BIG[0]) <= f < fr(SHAKE_BIG[1]):          # schermo che trema
+        rng = np.random.default_rng(f * 11 + 5)
+        frame = np.roll(frame, tuple(int(v) for v in rng.integers(-12, 13, 2)), axis=(0, 1))
+    if f in STROBE_F: frame = 1.0 - frame                  # strobo bianco/nero, 2 fotogrammi
     if fr(TB) <= f < fr(TB_END): paste_block(frame, TEMPO_IMG, Y_TEMPO, f - fr(TB))
     if fr(TB2) <= f < fr(TB_END): paste_block(frame, BAST_IMG, Y_BAST, f - fr(TB2))
     if f >= fr(HIT1): paste_block(frame, NMF, Y_NMF, f - fr(HIT1))
@@ -836,7 +1013,7 @@ def render_frame(f, src):
         if dk is not None and dk < 4 / FPS:
             amp = {1: 0.025, 2: 0.04, 3: 0.04, 4: 0.05}[sec[3]]
             frame = punch(frame, 1 + amp * [1, 0.75, 0.5, 0.25][min(3, int(dk * FPS))])
-    if f in FLASHES:                                   # flash bianco (porta -> cuffie)
+    if f in FLASHES:                                   # flash bianco (moneta su "tolgo")
         frame = frame * (1 - FLASHES[f]) + FLASHES[f]
     # grana: nei ritornelli al massimo metà di quella del resto del video
     frame = frame + GRAIN[((f // GRAIN_STEP) * 7) % len(GRAIN)] * (0.5 if in_chorus(t) else 1.0)
