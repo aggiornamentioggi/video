@@ -554,9 +554,9 @@ def paste_block(frame, img, cy, k, op=1.0):
     paste_pm(frame, C, A, W / 2 - ccx, cy - ccy, op)
 
 HOOK_TXT = block_img(["NON MI FERMO"], 170, RED)
-TEMPO_IMG = block_img(["TEMPO"], 230, RED)
-BAST_IMG = block_img(["BASTARDO"], 230, RED)
-_tbh = TEMPO_IMG["h"] + 30 + BAST_IMG["h"]
+TEMPO_IMG = block_img(["TEMPO"], 120, RED)
+BAST_IMG = block_img(["BASTARDO"], 120, RED)
+_tbh = TEMPO_IMG["h"] + 16 + BAST_IMG["h"]
 Y_TEMPO = H / 2 - _tbh / 2 + TEMPO_IMG["h"] / 2
 Y_BAST = H / 2 + _tbh / 2 - BAST_IMG["h"] / 2
 TB2 = next_beat(TB)                               # BASTARDO sul beat dopo TEMPO
