@@ -6,7 +6,7 @@ Render con `tools/build.py` (timeline v3 di `tools/render.py`, tempi invariati).
 
 | File | Durata | Peso | CRF | Note |
 |---|---|---|---|---|
-| `non_mi_fermo_v3_1080x1920.mp4` | 179.70 s | 72.4 MB | 22 | CRF 20 → 101.8 MB (oltre 95 MB), riesportato a CRF 22 |
+| `non_mi_fermo_v3_1080x1920.mp4` | 179.70 s | 72.4 MB | 22 | CRF 20 → 101.9 MB (oltre 95 MB), riesportato a CRF 22 |
 | `taglio_ritornello.mp4` | 29.00 s | 13.0 MB | 20 | CRF 20 al primo tentativo; segmento 63.13–90.12 s del video completo |
 | `taglio_strofa.mp4` | 33.73 s | 22.7 MB | 20 | CRF 20 al primo tentativo; segmento 99.03–130.75 s del video completo |
 | `taglio_finale.mp4` | 35.87 s | 17.1 MB | 20 | CRF 20 al primo tentativo; segmento 143.85–179.70 s del video completo |
@@ -73,7 +73,7 @@ Sezioni: aggancio 0–0.5, intro 0.5–9.91, strofa1 9.91–56.8, tempo_bastardo
 
 - **Vetro**: opzione B, 1,9x fino all'impronta ("parte"), poi velocità normale; nessun taglio in testa.
 - **Moneta**: tolti i fotogrammi 26, 34, 41, 42 (deformati), a metà velocità, 0,07 s di nero finale.
-- **Orologi**: tagliati in testa, così la fine della clip cade su "Sotto" e TEMPO BASTARDO compare in rosso sugli orologi.
+- **Orologi**: tagliati in testa, così la fine della clip cade su "Sotto" e TEMPO BASTARDO compare in rosso sugli orologi. Scritta TEMPO BASTARDO a 120 px (commit 50f46ba), integrata prima del render finale.
 - **Grana nei ritornelli** dimezzata: 0,25% (0,5% nel resto del video).
 - **muro.mp4**: non usato, tenuto come riserva.
 
