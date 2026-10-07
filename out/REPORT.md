@@ -1,22 +1,149 @@
-# REPORT v4: "Non Mi Fermo" (Ipnos)
+# REPORT v5: "Non Mi Fermo" (Ipnos)
 
-Render con `tools/build.py` dalla timeline v4 di `tools/render.py` (partita dalla v3, con main unito: fiches, sabbia e clessidra). Il nome del file completo resta `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
+Render con `tools/build.py` dalla timeline v5 di `tools/render.py`: è la v4 con main unito (cuore di vetro) e solo le correzioni richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
 
 ## File
 
 | File | Durata | Peso | CRF | Note |
 |---|---|---|---|---|
-| `non_mi_fermo_v3_1080x1920.mp4` | 179.70 s | 86.0 MB | 22 | CRF 20 → 120.5 MB (oltre 95 MB), riesportato a CRF 22 |
-| `taglio_ritornello.mp4` | 29.00 s | 14.1 MB | 20 | CRF 20 al primo tentativo; segmento 63.13–90.12 s del video completo |
-| `taglio_strofa.mp4` | 33.73 s | 24.9 MB | 20 | CRF 20 al primo tentativo; segmento 99.03–130.75 s del video completo |
-| `taglio_finale.mp4` | 35.87 s | 17.9 MB | 20 | CRF 20 al primo tentativo; segmento 143.85–179.70 s del video completo |
-| `anteprima_ritornello.mp4` | 20.00 s | 9.5 MB | 20 | 20 s dal primo ritornello |
+| `non_mi_fermo_v3_1080x1920.mp4` | 179.70 s | 85.0 MB | 22 | CRF 20 → 117.2 MB (oltre 95 MB), riesportato a CRF 22 |
+| `taglio_ritornello.mp4` | 29.00 s | 12.9 MB | 20 | CRF 20 al primo tentativo; segmento 63.13–90.12 s del video completo |
+| `taglio_strofa.mp4` | 33.73 s | 25.3 MB | 20 | CRF 20 al primo tentativo; segmento 99.03–130.75 s del video completo |
+| `taglio_finale.mp4` | 35.87 s | 16.7 MB | 20 | CRF 20 al primo tentativo; segmento 143.85–179.70 s del video completo |
+| `anteprima_ritornello.mp4` | 20.00 s | 9.1 MB | 20 | 20 s dal primo ritornello |
 | `anteprima_sheet.jpg` | — | — | — | foglio 6x4 di fotogrammi dell'anteprima |
-| `check/*.jpg` | — | — | — | un fotogramma per ogni punto modificato, nominato con il verso |
+| `check/*.jpg` | — | — | — | 34 fotogrammi dei punti modificati, nominati con il verso |
 
 Verifica ffprobe: tutti 1080x1920, 30 fps, H.264 yuv420p, AAC 192 kbps (nominali; ffprobe ne misura ~200), una sola traccia audio (il brano), `+faststart`, sotto i 95 MB.
 
-## Modifiche v4
+## Controllo dei bordi (`tools/edge_check.py`)
+
+Per ogni fotogramma confronta le 4 colonne di pixel a sinistra e a destra con le colonne vicine (4-11). Un fotogramma è fuori soglia se il bordo differisce dalle vicine più di 2,5 volte quanto le vicine differiscono tra loro, +3 livelli. Sulla v4 lo stesso controllo trovava 275 fotogrammi fuori soglia nel solo taglio della strofa (il tremolio).
+
+- **Primo export v5**: 17 fotogrammi fuori soglia, tutti nella waveform: l'onda arrivava al bordo dello schermo con picchi netti (contenuto vero, non bande). Corretto sfumando l'onda negli ultimi 60 px ai lati; ho rifatto i due blocchi con la waveform e riesportato.
+- **Export finale**:
+
+| File | Fotogrammi | Fuori soglia |
+|---|---|---|
+| `non_mi_fermo_v3_1080x1920.mp4` | 5391 | 0 |
+| `taglio_ritornello.mp4` | 870 | 0 |
+| `taglio_strofa.mp4` | 1012 | 0 |
+| `taglio_finale.mp4` | 1076 | 0 |
+| `anteprima_ritornello.mp4` | 600 | 0 |
+
+## Modifiche v5
+
+**1. Tremolio e bande ai lati**
+- Tolta la scossa continua nelle strofe (`np.roll`, che ripeteva ai lati i pixel del lato opposto) e lo schermo che tremava nel testo grande.
+- Tolto anche il jitter dei sottotitoli sui colpi nei ritornelli.
+- Restano solo zoom centrati in avanti: zoom sul beat, zoom lenti, avvicinamento sulla penna.
+- Glitch rifatto senza traslazione: separazione RGB e fasce spostate prese da una copia del fotogramma ingrandita dell'8% (spostamento massimo 39 px su 43 di margine), quindi mai pixel ripetuti o bande ai lati.
+
+**2. Intro IPNOS**
+- Sfondo: primo fotogramma del corridoio (crop 1,25x come nel resto del corridoio), fermo.
+- IPNOS rosso #E10600, Anton, al ~35% della larghezza sul primo colpo (0,165 s), centrata al 60% dell'altezza; si rimpicciolisce di scatto sui due colpi (0,82 e 0,65) e sfuma da 1,15 a 1,85 s.
+- Il corridoio parte da quel fotogramma sul beat a 1,95 s, senza stacco. Porta e cuffie come prima.
+
+**3. Scritte giganti tolte**
+- "Morite contenti / sono il salvatore / fatevi onore": nero con i sottotitoli normali.
+- "Non mi fotte… / che sia chiaro giuro": continua il mare (clip intera a 0,84x, da "Dentro la testa" a "Vedo il chiaro scuro").
+- "Vedo il chiaro scuro / che diventa sempre un po' più scuro": lampione da qui. Luce accesa (0-1,5 s di clip, a 0,68x), sfarfallio e spegnimento su "più" (101,24 s), penombra su "un giorno tutto", buio pieno su "buio" (102,56 s) come prima.
+- Sottotitoli identici al resto (font, dimensione, fascia 70-80%, karaoke).
+
+**4. Waveform nel ritornello**
+- Stem vocale estratto da `audio_cut.wav` (lo stesso audio del video) con UVR MDX-NET Kim_Vocal_2 (audio-separator). La correlazione con la traccia dà offset 0 campioni.
+- La waveform è generata a ogni fotogramma: 360 px al secondo (12 px a fotogramma), da destra a sinistra, puntina verde fissa al centro. Sotto la puntina c'è sempre il suono dell'istante del fotogramma, per costruzione.
+- Verifica con `out/sync.json`: all'inizio di "voce" e di "respiro" la puntina è sopra il suono in tutti e quattro i ritornelli (livello alla puntina 0,22-0,54 contro ~0,01 del silenzio). Nel primo ritornello la voce riparte a 63,52 s, esattamente su "voce" in sync.json. Sfasamento tra waveform e audio: nessuno. Fotogrammi in `check/03_rit*_waveform_su_voce|respiro.jpg`.
+
+**5. Cuore nel ritornello**
+- Clip del cuore di vetro al posto del corridoio rosso, da "Battico cardiaco" alla riga dopo, in tutti e quattro i ritornelli.
+- Al 55%, su nero pieno: bordi della clip sfumati e il nero della clip (0,0,7 dopo la grading) portato a 0, così il raccordo non si vede. Centrato in orizzontale, centro del cuore al 40% dell'altezza. Durante il cuore niente bagliore rosso del ritornello, per tenere il nero pieno.
+- I picchi di luce della clip (1,08 e 2,81 s) cadono su due colpi di cassa; lo spegnimento (3,98 s) cade esattamente su "muore"; dopo resta spento fino allo stacco.
+- Su ogni colpo di cassa: scatto di scala 1,00 → 1,04 → 1,00 in 6 fotogrammi, centrato sul cuore.
+
+  - Ritornello 1: 73.31–76.64 s, picchi sui colpi a 73.91 e 75.36 s, "muore" a 76.16 s; velocità dei tratti 1.00x, 1.19x, 1.25x, 1.25x, 1.00x; salto nel tratto piatto 0.17 s.
+  - Ritornello 2: 86.84–90.12 s, picchi sui colpi a 87.42 e 88.87 s, "muore" a 89.72 s; velocità dei tratti 1.00x, 1.19x, 1.25x, 1.25x, 1.00x; salto nel tratto piatto 0.11 s.
+  - Ritornello 3: 154.44–157.68 s, picchi sui colpi a 155.03 e 156.48 s, "muore" a 157.28 s; velocità dei tratti 1.00x, 1.19x, 1.25x, 1.25x, 1.00x; salto nel tratto piatto 0.17 s.
+  - Ritornello 4: 167.97–172.38 s, picchi sui colpi a 168.55 e 170.00 s, "muore" a 170.88 s; velocità dei tratti 1.00x, 1.19x, 1.25x, 1.25x, 0.67x; salto nel tratto piatto 0.08 s.
+
+## Ripieghi v5
+
+- **Cuore, tratto dopo il secondo picco**: tra l'ultimo colpo di cassa utile e "muore" ci sono solo 0,8-0,9 s, mentre la clip ha 1,17 s tra il picco e lo spegnimento: servirebbe 1,3-1,46x. Per restare entro 1,25x ho saltato 0,08-0,17 s nel tratto in cui la luce è bassa e ferma (3,4-3,8 s di clip); il salto non si vede.
+- **Cuore, colpi deboli**: in quei punti del brano le casse forti sono poche. Per agganciare il primo picco ho usato anche le casse deboli (forza ≥ 0,15, per esempio 73,91 s), e gli stessi colpi danno gli scatti di scala.
+- **Cuore, dopo "muore" nell'ultimo ritornello**: la clip finisce prima dello stacco, quindi la coda spenta va a 0,67x (resta comunque spenta).
+- **Lampione**: la parte accesa (1,5 s di clip) copre 2,2 s di versi, quindi 0,68x ("rallentala quanto serve").
+- **Strobo su "chiaro scuro"**: lasciato com'era (immagine invertita per 2 fotogrammi sui beat e mezzi beat). Ora inverte il lampione invece del testo gigante.
+- **Stem vocale**: il modello Demucs non si poteva scaricare da questo ambiente (host bloccato). Ho usato UVR MDX-NET Kim_Vocal_2, scaricato da GitHub.
+
+## Verso → clip
+
+Dal `--plan`; nessuna sovrapposizione e nessun buco tra gli inserti.
+
+| Verso | Clip | Inizio (s) | Fine (s) | Velocità / note |
+|---|---|---|---|---|
+| (IPNOS sul primo fotogramma del corridoio) | corridoio | 0.00 | 1.95 | colpi a 0,165 e 0,655 s |
+| — | corridoio | 0.00 | 3.20 | fermo, 1.00x, crop 1.25x |
+| — | porta | 3.20 | 5.29 | 1.15x |
+| Ipnos Ehi / Torno sul pezzo / Forse ci resto nemmeno lo so / Dico le cose quelle che sento | studio | 5.29 | 13.04 | 0.98x, 0.61x, crop 1.35x |
+| Confesso i peccati con il mio accento / Vorrei non ci fosse un domani | microfono | 13.04 | 15.72 | 1.00x |
+| Vorrei non ci fosse un domani / Che tutto finisse oggi / La mente che vede il futuro e perde il presente scava nel niente | tramonto | 15.72 | 19.18 | 0.80x |
+| La mente che vede il futuro e perde il presente scava nel niente / Torno fresco ma non torno quello | pozzo | 19.18 | 22.55 | 0.89x |
+| Torno fresco ma non torno quello / Ma non torno questo e domani resto | muro | 22.55 | 24.66 | 1.00x |
+| Ma non torno questo e domani resto / Dico solo che non voglio il resto | strada | 24.66 | 27.24 | 1.00x, crop 1.5x |
+| Dico solo che non voglio il resto / Voglio tutto quello che voglio investo / Non voglio fare la fine di questi | fiches | 27.24 | 30.84 | 1.24x, 0.75x, fermo |
+| Finire dentro una bara coi resti | scatola | 30.84 | 32.28 | 0.97x |
+| Finire dentro una bara coi resti | nero | 32.28 | 32.68 |  |
+| Voglio lasciare una parte di me | vetro | 32.68 | 34.04 | 1.88x, 1.00x |
+| In nome dell'arte di quello che faccio / Per sta roba è una cifra che sbatto | studio | 34.04 | 36.11 | 1.00x, crop 2.2x |
+| Per sta roba è una cifra che sbatto / Tu non capisci quello che ho fatto | microfono | 36.11 | 39.24 | 0.91x, crop 1.25x |
+| Solo soldato le barre ho buttato | mano | 39.24 | 40.84 | 1.00x |
+| Pacato, svogliato ma sono tornato | raffica | 40.84 | 42.84 |  |
+| Lavorare per vivere mica / Vivere per lavorare | ufficio | 42.84 | 45.64 | 1.00x |
+| Dentro la brocca cade la goccia | brocca | 45.64 | 47.40 | 1.00x |
+| Gioco di carte e il vaso scompare | carte | 47.40 | 49.40 | 1.50x |
+| Devi rischiare per prendere tutto / Fato farabutto ti tolgo il mio dalle mani | moneta | 49.40 | 53.92 | 0.50x, fermo immagine |
+| Sleghiamo legami stupidi umani | corda | 53.92 | 56.08 | 1.00x |
+| Corsa per il tempo bastardo | orologi | 56.08 | 57.52 | 1.00x |
+| Sotto sto mondo ci metto un petardo | mappamondo | 57.52 | 59.36 | 1.00x |
+| Morite contenti / Sono il salvatore Fatevi onore | nero | 59.36 | 62.96 |  |
+| Senti la voce senti il respiro | wave | 62.96 | 66.06 | generata dallo stem vocale |
+| Prendo la penna scrivo in corsivo / Sai che non mi fermo scrivo in eterno | penna | 66.06 | 71.56 |  |
+| Fino a che non si spegne il cuore / Battico cardiaco conta le ore | candela | 71.56 | 73.31 |  |
+| Battico cardiaco conta le ore / Fino al momento in cui muore | cuore | 73.31 | 76.64 | 1.00x, 1.19x, 1.25x, 1.25x, 1.00x, salto 0.17 s |
+| Senti la voce senti il respiro | wave | 76.64 | 79.62 | generata dallo stem vocale |
+| Prendo la penna scrivo in corsivo / Sai che non mi fermo scrivo in eterno | penna | 79.62 | 85.12 |  |
+| Fino a che non si spegne il cuore / Battico cardiaco conta le ore | candela | 85.12 | 86.84 |  |
+| Battico cardiaco conta le ore / Fino al momento in cui muore | cuore | 86.84 | 90.12 | 1.00x, 1.19x, 1.25x, 1.25x, 1.00x, salto 0.112 s |
+| Quando mi ascolti rimani connesso | studio | 90.12 | 93.07 | 0.75x, fermo |
+| Dentro la testa bro ho un mare diverso / Non mi fotte un cazzo di nessuno / Che sia chiaro giuro | mare | 93.07 | 99.03 | 0.84x |
+| Vedo il chiaro scuro / Che diventa sempre un po più scuro / Un giorno tutto sarà buio | lampione | 99.03 | 103.36 | 0.68x, 1.07x, 0.73x, 1.00x |
+| Non pensare io sia pessimista | brocca | 103.36 | 105.81 | 1.00x, crop 2.3x |
+| Sono un artista / Senza un po di male la mia arte non ha vista / Quindi chi l'ha vista / Cambierò canale quando cambierò modo di pensare | specchio | 105.81 | 110.43 | 0.75x, fermo |
+| Cambierò canale quando cambierò modo di pensare | tv | 110.43 | 113.43 |  |
+| Ma è troppo banale / Io Non voglio mai assomigliare | tv | 113.43 | 116.80 | crop 1.45x |
+| Odio lo standard / Mi prende male / Voglio le robe più strane | maschera | 116.80 | 120.19 | ≤0.80x |
+| Voglio le robe più strane / Giro le strade vago nei posti / Cerco i dettagli nascosti | strada | 120.19 | 122.21 | ≤0.80x |
+| Cerco i dettagli nascosti / Fino a trovare quello che cerco | torcia | 122.21 | 125.18 | 1.00x |
+| Fino a trovare quello che cerco / Ma dubito sempre lo stesso / Adesso per me è già passato | clessidra | 125.18 | 128.15 | 0.48x |
+| Adesso per me è già passato / L'istante presente l'ho già scordato / Non lo ricordo davvero non lo ricordo | foto | 128.15 | 133.61 | 0.91x |
+| Cosa è successo? / Pensavo a domani ho perso qualcosa | specchio | 133.61 | 135.74 | 1.00x, crop 1.7x |
+| Pensavo a domani ho perso qualcosa / Qui dalle mie mani / Aspetto il domani | sabbia | 135.74 | 137.44 | 1.00x |
+| Aspetto il domani / Avrò schemi più chiari | tramonto | 137.44 | 139.57 | 1.00x al contrario |
+| Ma tanto ho capito / È la mente mia che m'ha tradito | pozzo | 139.57 | 144.04 | 0.75x, fermo, crop 1.1x |
+| Senti la voce senti il respiro | wave | 144.04 | 147.22 | generata dallo stem vocale |
+| Prendo la penna scrivo in corsivo / Sai che non mi fermo scrivo in eterno | penna | 147.22 | 152.72 |  |
+| Fino a che non si spegne il cuore / Battico cardiaco conta le ore | candela | 152.72 | 154.44 |  |
+| Battico cardiaco conta le ore / Fino al momento in cui muore | cuore | 154.44 | 157.68 | 1.00x, 1.19x, 1.25x, 1.25x, 1.00x, salto 0.169 s |
+| Senti la voce senti il respiro | wave | 157.68 | 160.75 | generata dallo stem vocale |
+| Prendo la penna scrivo in corsivo / Sai che non mi fermo scrivo in eterno | penna | 160.75 | 166.25 |  |
+| Fino a che non si spegne il cuore / Battico cardiaco conta le ore | candela | 166.25 | 167.97 |  |
+| Battico cardiaco conta le ore / Fino al momento in cui muore | cuore | 167.97 | 172.38 | 1.00x, 1.19x, 1.25x, 1.25x, 0.67x, salto 0.076 s |
+
+## Storico v4 (ancora valido, salvo i punti superati dalla v5)
+
+Superati dalla v5: scritte giganti e schermo che trema, corridoio rosso nei ritornelli, soundwave in clip, sfondo nero dell'intro, mare e lampione nella strofa 2.
+
+### Modifiche v4
 
 **Regole generali**
 - Nessuno sfondo scurito o sfocato: ogni tratto ha la sua clip, oppure nero con testo grande.
@@ -56,7 +183,7 @@ Verifica ffprobe: tutti 1080x1920, 30 fps, H.264 yuv420p, AAC 192 kbps (nominali
 - Tramonto al contrario (alba) su "Aspetto il domani".
 - Pozzo con zoom fino a 2,4x dentro il buio fino al ritornello.
 
-## Ripieghi
+### Ripieghi
 
 - **Studio nell'intro**: dopo le cuffie la clip ha solo 2,6 s per 4,24 s di versi, quindi 0,61x ("rallentala se non basta").
 - **Studio su "Quando mi ascolti"**: le cuffie in testa esistono solo da 3,42 s a 6,04 s di clip e l'intro le usa tutte. Ho usato 3,8-6,0 s con un crop diverso (largo invece che stretto sulla testa), a 0,75x. Il tratto quindi si sovrappone in parte a quello dell'intro.
@@ -69,68 +196,3 @@ Verifica ffprobe: tutti 1080x1920, 30 fps, H.264 yuv420p, AAC 192 kbps (nominali
 - **Ritornelli** (nessuna indicazione, prima c'erano sfondi sfocati): soundwave allungata fino alla penna; penna (nitida) fino alla candela; corridoio rosso da "Battico cardiaco" alla riga successiva, come già nell'ultimo ritornello, con un punto di partenza e un crop diversi ogni volta.
 - **Microfono su "Confesso"**: allungato fino a "Vorrei" (prima c'erano 0,4 s di sfondo).
 - **sedia.mp4**: non più usata (su "Pacato" ora c'è la raffica). **muro.mp4**: ora usato.
-
-## Verso → clip
-
-Dal `--plan`; nessuna sovrapposizione e nessun buco tra gli inserti.
-
-| Verso | Clip | Inizio (s) | Fine (s) | Velocità / note |
-|---|---|---|---|---|
-| (IPNOS su nero) | — | 0.00 | 1.95 | colpi a 0,165 e 0,655 s |
-| — | corridoio | 1.95 | 3.20 | 1.00x, crop 1.25x |
-| — | porta | 3.20 | 5.29 | 1.15x |
-| Ipnos Ehi / Torno sul pezzo / Forse ci resto nemmeno lo so / Dico le cose quelle che sento | studio | 5.29 | 13.04 | 0.98x, 0.61x, crop 1.35x |
-| Confesso i peccati con il mio accento / Vorrei non ci fosse un domani | microfono | 13.04 | 15.72 | 1.00x |
-| Vorrei non ci fosse un domani / Che tutto finisse oggi / La mente che vede il futuro e perde il presente scava nel niente | tramonto | 15.72 | 19.18 | 0.80x |
-| La mente che vede il futuro e perde il presente scava nel niente / Torno fresco ma non torno quello | pozzo | 19.18 | 22.55 | 0.89x |
-| Torno fresco ma non torno quello / Ma non torno questo e domani resto | muro | 22.55 | 24.66 | 1.00x |
-| Ma non torno questo e domani resto / Dico solo che non voglio il resto | strada | 24.66 | 27.24 | 1.00x, crop 1.5x |
-| Dico solo che non voglio il resto / Voglio tutto quello che voglio investo / Non voglio fare la fine di questi | fiches | 27.24 | 30.84 | 1.24x, 0.75x, ferma |
-| Finire dentro una bara coi resti | scatola | 30.84 | 32.28 | 0.97x |
-| Finire dentro una bara coi resti | nero | 32.28 | 32.68 |  |
-| Voglio lasciare una parte di me | vetro | 32.68 | 34.04 | 1.88x, 1.00x |
-| In nome dell'arte di quello che faccio / Per sta roba è una cifra che sbatto | studio | 34.04 | 36.11 | 1.00x, crop 2.2x |
-| Per sta roba è una cifra che sbatto / Tu non capisci quello che ho fatto | microfono | 36.11 | 39.24 | 0.91x, crop 1.25x |
-| Solo soldato le barre ho buttato | mano | 39.24 | 40.84 | 1.00x |
-| Pacato, svogliato ma sono tornato | raffica | 40.84 | 42.84 |  |
-| Lavorare per vivere mica / Vivere per lavorare | ufficio | 42.84 | 45.64 | 1.00x |
-| Dentro la brocca cade la goccia | brocca | 45.64 | 47.40 | 1.00x |
-| Gioco di carte e il vaso scompare | carte | 47.40 | 49.40 | 1.50x |
-| Devi rischiare per prendere tutto / Fato farabutto ti tolgo il mio dalle mani | moneta | 49.40 | 53.92 | 0.50x, fermo immagine |
-| Sleghiamo legami stupidi umani | corda | 53.92 | 56.08 | 1.00x |
-| Corsa per il tempo bastardo | orologi | 56.08 | 57.52 | 1.00x |
-| Sotto sto mondo ci metto un petardo | mappamondo | 57.52 | 59.36 | 1.00x |
-| Morite contenti / Sono il salvatore Fatevi onore | nero | 59.36 | 62.96 |  |
-| Senti la voce senti il respiro | soundwave | 62.96 | 66.06 | 1.00x |
-| Prendo la penna scrivo in corsivo / Sai che non mi fermo scrivo in eterno | penna | 66.06 | 71.56 |  |
-| Fino a che non si spegne il cuore / Battico cardiaco conta le ore | candela | 71.56 | 73.31 |  |
-| Battico cardiaco conta le ore / Fino al momento in cui muore | corridoio | 73.31 | 76.64 | 1.00x, crop 1.3x, rosso |
-| Senti la voce senti il respiro | soundwave | 76.64 | 79.62 | 1.00x |
-| Prendo la penna scrivo in corsivo / Sai che non mi fermo scrivo in eterno | penna | 79.62 | 85.12 |  |
-| Fino a che non si spegne il cuore / Battico cardiaco conta le ore | candela | 85.12 | 86.84 |  |
-| Battico cardiaco conta le ore / Fino al momento in cui muore | corridoio | 86.84 | 90.12 | 1.00x, crop 1.5x, rosso |
-| Quando mi ascolti rimani connesso | studio | 90.12 | 93.07 | 0.75x, ferma |
-| Dentro la testa bro ho un mare diverso | mare | 93.07 | 96.46 | ≤0.80x |
-| Dentro la testa bro ho un mare diverso / Non mi fotte un cazzo di nessuno / Che sia chiaro giuro / Vedo il chiaro scuro / Che diventa sempre un po più scuro | nero | 96.46 | 101.64 |  |
-| Un giorno tutto sarà buio | lampione | 101.64 | 103.36 | 1.00x |
-| Non pensare io sia pessimista | brocca | 103.36 | 105.81 | 1.00x, crop 2.3x |
-| Sono un artista / Senza un po di male la mia arte non ha vista / Quindi chi l'ha vista / Cambierò canale quando cambierò modo di pensare | specchio | 105.81 | 110.43 | 0.75x, ferma |
-| Cambierò canale quando cambierò modo di pensare | tv | 110.43 | 113.43 |  |
-| Ma è troppo banale / Io Non voglio mai assomigliare | tv | 113.43 | 116.80 | crop 1.45x |
-| Odio lo standard / Mi prende male / Voglio le robe più strane | maschera | 116.80 | 120.19 | ≤0.80x |
-| Voglio le robe più strane / Giro le strade vago nei posti / Cerco i dettagli nascosti | strada | 120.19 | 122.21 | ≤0.80x |
-| Cerco i dettagli nascosti / Fino a trovare quello che cerco | torcia | 122.21 | 125.18 | 1.00x |
-| Fino a trovare quello che cerco / Ma dubito sempre lo stesso / Adesso per me è già passato | clessidra | 125.18 | 128.15 | 0.48x |
-| Adesso per me è già passato / L'istante presente l'ho già scordato / Non lo ricordo davvero non lo ricordo | foto | 128.15 | 133.61 | 0.91x |
-| Cosa è successo? / Pensavo a domani ho perso qualcosa | specchio | 133.61 | 135.74 | 1.00x, crop 1.7x |
-| Pensavo a domani ho perso qualcosa / Qui dalle mie mani / Aspetto il domani | sabbia | 135.74 | 137.44 | 1.00x |
-| Aspetto il domani / Avrò schemi più chiari | tramonto | 137.44 | 139.57 | 1.00x al contrario |
-| Ma tanto ho capito / È la mente mia che m'ha tradito | pozzo | 139.57 | 144.04 | 0.75x, ferma, crop 1.1x |
-| Senti la voce senti il respiro | soundwave | 144.04 | 147.22 | 1.00x |
-| Prendo la penna scrivo in corsivo / Sai che non mi fermo scrivo in eterno | penna | 147.22 | 152.72 |  |
-| Fino a che non si spegne il cuore / Battico cardiaco conta le ore | candela | 152.72 | 154.44 |  |
-| Battico cardiaco conta le ore / Fino al momento in cui muore | corridoio | 154.44 | 157.68 | 1.00x, crop 1.3x, rosso |
-| Senti la voce senti il respiro | soundwave | 157.68 | 160.75 | 1.00x |
-| Prendo la penna scrivo in corsivo / Sai che non mi fermo scrivo in eterno | penna | 160.75 | 166.25 |  |
-| Fino a che non si spegne il cuore / Battico cardiaco conta le ore | candela | 166.25 | 167.97 |  |
-| Battico cardiaco conta le ore / Fino al momento in cui muore | corridoio | 167.97 | 172.38 | 1.00x, crop 1.15x, rosso |

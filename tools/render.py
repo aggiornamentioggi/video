@@ -57,7 +57,9 @@ NEW_CLIPS = {"tramonto": "tramonto", "ufficio": "ufficio", "brocca": "brocca", "
              "moneta": "The-old-coin-spins",
              # v4
              "muro": "muro", "fiches": "The-tall-stack-of-poker", "sabbia": "Fine-sand-keeps",
-             "clessidra": "The-thin-stream-of-sand"}
+             "clessidra": "The-thin-stream-of-sand",
+             # v5
+             "cuore": "The-glass-heart"}
 for _k, _p in NEW_CLIPS.items():
     if find_src([_p]): SRC[_k] = find_src([_p])
 OPTIONAL = ["moneta", "goccia", "carte", "petardo", "mare", "lampione", "personaggio", "performance"]
@@ -193,7 +195,9 @@ STUDIO0 = S(TORNO_T - CUFFIE_C)                           # clip studio da 0 a v
 DOOR0 = S(STUDIO0 - 2.1)
 DOOR_LEN = 2.4                                            # porta: solo 0-2,4 s (dopo c'è fumo)
 ce = clipend("corridoio")
-ins("corridoio", CORR0, DOOR0, map=[(CORR0, DOOR0, ce - (DOOR0 - CORR0), ce)], zoom=1.25, cx=0.5, cy=0.45)
+# v5: sotto IPNOS il primo fotogramma del corridoio, fermo; finita la coda d'eco parte da lì
+ins("corridoio", 0.0, DOOR0, map=[(0.0, CORR0, 0.0, 0.0), (CORR0, DOOR0, 0.0, DOOR0 - CORR0)],
+    zoom=1.25, cx=0.5, cy=0.45)
 ins("porta", DOOR0, STUDIO0, map=[(DOOR0, STUDIO0, 0.0, DOOR_LEN)], zoomramp=(1.0, 1.10))
 CONF = wt("Confesso")
 ins("studio", STUDIO0, CONF, map=[(STUDIO0, TORNO_T, 0.0, CUFFIE_C),       # rallentata quanto serve
@@ -247,14 +251,11 @@ mapped("mappamondo", a, e, 2.79 - (pt - a), 2.79 + (e - pt))    # esplosione su 
 T_MOR = e; T_RIT1 = wt("Senti", T_MOR)
 black(T_MOR, T_RIT1)
 
-# testo grande al centro, una frase alla volta (su nero): (t0, t1, [(riga, colore)])
-WHITE = (255, 255, 255)
-BIG = [(T_MOR, wt("Sono", T_MOR), [("MORITE", WHITE), ("CONTENTI", WHITE)]),
-       (wt("Sono", T_MOR), wt("Fatevi", T_MOR), [("SONO IL", WHITE), ("SALVATORE", WHITE)]),
-       (wt("Fatevi", T_MOR), T_RIT1, [("FATEVI", WHITE), ("ONORE", WHITE)])]
+# v5: niente scritte giganti; su nero i sottotitoli normali
+BIG = []
 
-# --- ritornelli: nessuno sfondo sfocato. soundwave fino alla penna, penna fino alla candela,
-# corridoio rosso da "Battico" alla riga dopo
+# --- ritornelli: waveform della voce fino alla penna, penna fino alla candela,
+# cuore di vetro da "Battico" alla riga dopo
 PEN = [snap(line_span(g)[0]) for g in find_line("Prendo la penna")]
 CAND = []
 for g in find_line("Fino a che non si spegne"):
@@ -264,18 +265,57 @@ for g in find_line("Fino a che non si spegne"):
     CAND.append((t0, t1))
 SW = [WORDS[g[0]]["inizio"] for g in find_line("Senti la voce")]
 for k, a in enumerate(SW):
-    b = PEN[k]; mapped("soundwave", a, b, 0.0, b - a)
+    b = PEN[k]; ins("wave", a, b)                 # v5: generata dallo stem vocale
 for k, t0 in enumerate(PEN):
     ins("penna", t0, CAND[k][0])
 T_STR2 = chorus[0][1]
 NEXT = [SW[1], T_STR2, SW[3], CLOSE]
-REDV = [(0.3, 1.3, 0.5, 0.45), (2.6, 1.5, 0.45, 0.5), (2.0, 1.3, 0.5, 0.45), (1.4, 1.15, 0.5, 0.5)]
-for k, (c0, z, cx, cy) in enumerate(REDV):
+# cuore: picchi di luce della clip sui colpi di cassa (tratti tra 0,75x e 1,25x), spegnimento su "muore"
+HEART_PEAKS = [1.08, 2.81]                        # massimi della luce interna (s di clip)
+HEART_OFF = 3.98                                  # la luce si spegne
+HEART_KICKS = [k for k, s_ in KICKS if s_ >= 0.15]          # colpi di cassa (anche deboli)
+HEART = []
+HEART_FLAT = (3.40, 3.80)                         # luce bassa e ferma: si può saltarne un pezzo
+def heart_map(t0, m, t1):
+    """P1 e P2 su due colpi di cassa, spegnimento su "muore", ogni tratto tra 0,75x e 1,25x;
+    se dopo P2 il tempo non basta, si salta il minimo indispensabile del tratto piatto"""
+    ks = [k for k in HEART_KICKS if t0 + 0.05 < k < m - 0.3]
+    P1, P2 = HEART_PEAKS
+    best = None
+    for i, k1 in enumerate(ks):
+        for k2 in ks[i + 1:]:
+            s12 = (P2 - P1) / (k2 - k1)
+            skip = max(0.0, (HEART_OFF - P2) - 1.25 * (m - k2))
+            s2m = (HEART_OFF - P2 - skip) / (m - k2)
+            c0 = max(0.0, P1 - (k1 - t0)); s0 = (P1 - c0) / (k1 - t0)
+            if skip > HEART_FLAT[1] - HEART_FLAT[0] or not all(0.75 <= v <= 1.25 for v in (s12, s2m, s0)):
+                continue
+            cost = max(abs(math.log(v)) for v in (s12, s2m, s0)) + skip
+            if best is None or cost < best[0]: best = (cost, k1, k2, c0, skip)
+    if best is None: return None
+    _, k1, k2, c0, skip = best
+    ce_ = clipend("cuore")
+    mp = [(t0, k1, c0, P1), (k1, k2, P1, P2)]
+    if skip > 0:
+        f0 = sum(HEART_FLAT) / 2 - skip / 2; f1 = f0 + skip
+        tm = k2 + (f0 - P2) * (m - k2) / (HEART_OFF - P2 - skip)
+        mp += [(k2, tm, P2, f0), (tm, m, f1, HEART_OFF)]
+    else:
+        mp += [(k2, m, P2, HEART_OFF)]
+    mp += [(m, t1, HEART_OFF, min(ce_, HEART_OFF + t1 - m))]
+    return mp, (k1, k2), skip
+for k in range(len(CAND)):
     a, b = CAND[k][1], NEXT[k]
-    ins("corridoio", a, b, map=[(a, b, c0, c0 + b - a)], zoom=z, cx=cx, cy=cy, grade="red")
+    g = [gg for gg in find_line("Fino al momento in cui muore") if a <= WORDS[gg[0]]["inizio"] < b][0]
+    m = WORDS[g[-1]]["inizio"]                    # "muore"
+    hm = heart_map(a, m, b)
+    if hm is None: raise SystemExit(f"cuore: nessuna coppia di colpi compatibile ({a:.2f}-{m:.2f})")
+    ins("cuore", a, b, map=hm[0], heart=True, picchi=[round(x, 3) for x in hm[1]], muore=round(m, 3),
+        salto=round(hm[2], 3))
+    HEART.append((a, b, m))
 
 # --- strofa 2
-VERSI = [("mare", "Dentro la testa", None), ("maschera", "Odio lo standard", "Voglio le robe"),
+VERSI = [("maschera", "Odio lo standard", "Voglio le robe"),
          ("strada", "Giro le strade", None)]
 for name, first, last in VERSI:                 # come nella v3 (sul beat, fino a 0,8x)
     g0 = find_line(first)[0]; g1 = find_line(last)[0] if last else g0
@@ -283,19 +323,15 @@ for name, first, last in VERSI:                 # come nella v3 (sul beat, fino 
     f_ = a + clip_len(name) / 0.8
     if f_ < b: b = float(GRID[GRID <= f_ + 1e-6][-1])
     ins(name, a, b, inp=0.0, ramp=False, slow08=True)
-MARE0 = [d for d in inserts if d["name"] == "mare"][0]
-fit("studio", T_STR2, MARE0["t0"], 3.8, clipend("studio"), zoom=1.0)      # cuffie, inquadratura larga
-T_LAMP = L("Un giorno tutto")
-black(MARE0["t1"], T_LAMP)
-a = L("Non mi fotte"); b = L("Che sia chiaro"); c = L("Vedo il chiaro"); d_ = L("Che diventa")
-BIG += [(a, b, [("NON MI FOTTE", WHITE), ("UN CAZZO", WHITE), ("DI NESSUNO", WHITE)]),
-        (b, c, [("CHE SIA CHIARO", WHITE), ("GIURO", WHITE)]),
-        (c, d_, [("VEDO IL", WHITE), ("CHIARO SCURO", WHITE)]),
-        (d_, T_LAMP, [("CHE DIVENTA", WHITE), ("SEMPRE UN PO'", WHITE), ("PIÙ SCURO", RED)])]
-SHAKE_BIG = (a, T_LAMP)
+T_MARE = S(L("Dentro la testa")); T_VEDO = S(L("Vedo il chiaro"))
+fit("studio", T_STR2, T_MARE, 3.8, clipend("studio"), zoom=1.0)      # cuffie, inquadratura larga
+fit("mare", T_MARE, T_VEDO, 0.0, clipend("mare"))        # v5: continua fino a "Vedo il chiaro scuro"
+c = L("Vedo il chiaro"); d_ = L("Che diventa")
 STROBE = (wt("chiaro", c), d_)                            # "chiaro scuro": lampi sul beat
-a = T_LAMP; bu = wt("buio", a); e = wt("Non", bu)
-mapped("lampione", a, e, 1.87 - (bu - a), 1.87 + (e - bu))  # spegnimento su "buio"
+# lampione da "Vedo il chiaro scuro": luce accesa, si spegne su "più scuro", buio pieno su "buio"
+T_LAMP = L("Un giorno tutto"); PIU = wt("più", d_); bu = wt("buio", T_LAMP); e = wt("Non", bu)
+ins("lampione", T_VEDO, e, map=[(T_VEDO, PIU, 0.0, 1.50), (PIU, T_LAMP, 1.50, 1.93),
+                                (T_LAMP, bu, 1.93, 2.60), (bu, e, 2.60, 2.60 + e - bu)])
 T_SPEC = S(L("Sono un artista")); T_TV = S(word_t("Cambierò"))
 fit("brocca", e, T_SPEC, 2.2, clipend("brocca"), zoom=2.3, cx=0.5, cy=0.47)   # livello dell'acqua
 fit("specchio", T_SPEC, T_TV, 0.0, clipend("specchio"))
@@ -420,10 +456,6 @@ for name, t0, t1, lvl in SECTIONS:
             if t0 <= k < t1 and s > 0.6 and k - last > 8 * PERIOD * (0.5 if lvl == 4 else 1):
                 GL_FRAMES.append((fr(k), 7)); last = k
 # testo grande della strofa 2: glitch a ogni frase e sui beat
-for b0, b1, _ in BIG:
-    if SHAKE_BIG[0] - 0.01 <= b0 < SHAKE_BIG[1]:
-        GL_FRAMES.append((fr(b0), 16))
-        GL_FRAMES += [(fr(g), 7) for g in GRID if b0 + 0.1 < g < b1 - 0.05]
 STROBE_F = set()
 for g in GRID[(GRID >= STROBE[0] - 0.12) & (GRID < STROBE[1])]:         # lampi sul beat
     for h in (g, g + PERIOD / 2):
@@ -596,11 +628,7 @@ def draw_phrases(frame, f):
         chor = in_chorus(t)
         dx = dy = 0.0; op = 1.0; blur = 0.0; zs = 1.0
         if chor:
-            dk = last_event(KICK_T, t)
-            if dk is not None and dk < 3 / FPS:
-                amp = [6, 4, 2][min(2, int(dk * FPS))] * (1.4 if sec[3] == 4 else 1)
-                rng = np.random.default_rng(f + 17)
-                dx, dy = rng.uniform(-amp, amp, 2)
+            pass                                       # v5: niente jitter sui colpi
         else:
             e = ph["entry"]
             if e == "blur" and k < 6: blur = 12 * (1 - k / 6); op = (k + 1) / 6
@@ -681,7 +709,8 @@ Y_CS = top + NMF["h"] + G1 + IP["h"] + G2 + CS["h"] / 2
 
 # intro v4: IPNOS rosso su nero, stesso font della chiusura. Entra a ~70% della larghezza sul
 # primo colpo e si rimpicciolisce di scatto (ease-out); di nuovo sul secondo; sfuma sulla coda
-IP_INTRO = block_img(["IPNOS"], 700, RED, maxw=int(W * 0.70), shadow=False)
+IP_INTRO = block_img(["IPNOS"], 400, RED, maxw=int(W * 0.35))     # v5: ~35% della larghezza
+IP_Y = 0.60 * H
 _ipc = {}
 def ipnos_intro(frame, t):
     if not (IP_A <= t < IP_FADE[1]): return
@@ -692,7 +721,7 @@ def ipnos_intro(frame, t):
     if key not in _ipc: _ipc[key] = zoomed(IP_INTRO, key)
     C, A = _ipc[key]
     bx0, by0, bx1, by1 = IP_INTRO["bbox"]
-    paste_pm(frame, C, A, W / 2 - (bx0 + bx1) / 2 * key, H / 2 - (by0 + by1) / 2 * key, op)
+    paste_pm(frame, C, A, W / 2 - (bx0 + bx1) / 2 * key, IP_Y - (by0 + by1) / 2 * key, op)
 
 # testo grande al centro (una frase alla volta)
 BIG_IMG = []
@@ -737,16 +766,22 @@ def leak(t, inten):
     im = Image.fromarray((np.clip(v * inten, 0, 1) * 255).astype(np.uint8)).resize((W, H), Image.BILINEAR)
     return (np.asarray(im, np.float32) / 255)[..., None] * np.array([1.0, 0.12, 0.04], np.float32)
 
+GW, GH = int(round(W * 1.08)), int(round(H * 1.08))      # copia ingrandita dell'8%
+GMX, GMY = (GW - W) // 2, (GH - H) // 2
 def glitch(frame, k, amp0, seed):
-    amp = max(2, int(amp0 * (1 - k / 4)))
+    """v5: separazione RGB e fasce spostate prese da una copia ingrandita dell'8%: niente
+    traslazione dell'immagine e mai pixel ripetuti o bande ai lati"""
+    amp = max(2, int(min(amp0, 13) * (1 - k / 4)))
     rng = np.random.default_rng(seed)
-    dx, dy = rng.integers(-amp, amp + 1, 2)
-    out = np.roll(frame, (int(dy), int(dx)), axis=(0, 1))
-    out[..., 0] = np.roll(out[..., 0], amp, axis=1)
-    out[..., 2] = np.roll(out[..., 2], -amp, axis=1)
+    big = np.asarray(Image.fromarray((np.clip(frame, 0, 1) * 255).astype(np.uint8)).resize(
+        (GW, GH), Image.BILINEAR), np.float32) / 255
+    out = big[GMY:GMY + H, GMX:GMX + W].copy()
+    out[..., 0] = big[GMY:GMY + H, GMX + amp:GMX + amp + W, 0]
+    out[..., 2] = big[GMY:GMY + H, GMX - amp:GMX - amp + W, 2]
     for _ in range(3):
         y0 = int(rng.integers(0, H - 40)); hh = int(rng.integers(8, 40))
-        out[y0:y0 + hh] = np.roll(out[y0:y0 + hh], int(rng.integers(-3 * amp, 3 * amp + 1)), axis=1)
+        sh = int(rng.integers(-3 * amp, 3 * amp + 1))
+        out[y0:y0 + hh] = big[GMY + y0:GMY + y0 + hh, GMX + sh:GMX + sh + W]
     return out
 
 def punch(frame, s):
@@ -865,8 +900,71 @@ class MapReader:
         if zr:
             s = zr[0] + (zr[1] - zr[0]) * k / max(1, self.n - 1)
             if s > 1.001: a = punch(a, s)
+        if self.d.get("heart"): a = heart_frame(a, fr(self.d["t0"]) + k)
         return to_red(a) if self.red else a
     def close(self): self.p.kill(); self.p.wait()
+
+# cuore: clip al 55% su nero pieno (bordi sfumati), centro del cuore a metà larghezza e al 40%
+# dell'altezza; su ogni colpo di cassa scatto di scala 1.00 -> 1.04 -> 1.00 in 6 fotogrammi
+HEART_C = (0.495, 0.48)                           # centro del cuore nella clip
+HEART_BUMP = [0.5, 1.0, 0.75, 0.5, 0.25, 0.0]
+HEART_BLACK = np.array([0.0, 0.0, 8 / 255], np.float32)    # fondo della clip graduata: (0, 0, 7)
+_HK = np.array(HEART_KICKS)
+_hmask = {}
+def heart_frame(a, f):
+    dk = last_event(_HK, f / FPS)
+    j = int(round(dk * FPS)) if dk is not None else 99
+    sc = 0.55 * (1 + 0.04 * (HEART_BUMP[j] if j < len(HEART_BUMP) else 0.0))
+    w, h = int(round(W * sc)), int(round(H * sc))
+    im = np.asarray(Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).resize((w, h), Image.LANCZOS),
+                    np.float32) / 255
+    if (w, h) not in _hmask:
+        fx = np.clip(np.minimum(np.arange(w), w - 1 - np.arange(w)) / (0.14 * w), 0, 1)
+        fy = np.clip(np.minimum(np.arange(h), h - 1 - np.arange(h)) / (0.10 * h), 0, 1)
+        _hmask[(w, h)] = ((fy[:, None] * fx[None, :]) ** 1.5)[..., None].astype(np.float32)
+    im = np.clip(im - HEART_BLACK, 0, 1) / (1 - HEART_BLACK)   # nero della clip -> nero pieno
+    im = im * _hmask[(w, h)]
+    out = np.zeros((H, W, 3), np.float32)
+    x0 = int(round(W / 2 - HEART_C[0] * w)); y0 = int(round(0.40 * H - HEART_C[1] * h))
+    sx0, sy0 = max(0, -x0), max(0, -y0)
+    dx0, dy0 = max(0, x0), max(0, y0)
+    dx1, dy1 = min(W, x0 + w), min(H, y0 + h)
+    out[dy0:dy1, dx0:dx1] = im[sy0:sy0 + dy1 - dy0, sx0:sx0 + dx1 - dx0]
+    return out
+
+# waveform dello stem vocale (WORK/vocals.wav, stesso tratto dell'audio): scorre da destra a
+# sinistra sotto la puntina verde fissa; sotto la puntina c'è sempre il suono di quell'istante
+WAVE_PPS = 360                                    # px al secondo (12 px a fotogramma)
+WAVE_XN, WAVE_Y, WAVE_AMP = W // 2, int(H * 0.47), 170
+WAVE_EDGE = np.clip(np.minimum(np.arange(W), W - 1 - np.arange(W)) / 60.0, 0, 1) ** 1.5
+_VOC = []
+def vocal_peaks():
+    if not _VOC:
+        sr = WAVE_PPS * 60
+        raw = subprocess.check_output(["ffmpeg", "-v", "error", "-i", os.path.join(WORK, "vocals.wav"),
+                                       "-ac", "1", "-ar", str(sr), "-f", "f32le", "-"])
+        x = np.abs(np.frombuffer(raw, np.float32))
+        pk = x[:len(x) // 60 * 60].reshape(-1, 60).max(1)
+        _VOC.append(pk / max(1e-6, np.percentile(pk, 99.5)))
+    return _VOC[0]
+class WaveReader:
+    def __init__(self, d, skip):
+        self.f = fr(d["t0"]) + skip; self.pk = vocal_peaks()
+        self.yy = np.abs(np.arange(H) - WAVE_Y)[:, None]
+    def read(self):
+        t = self.f / FPS; self.f += 1
+        b = int(round(t * WAVE_PPS)) - WAVE_XN + np.arange(W)
+        v = np.where((b >= 0) & (b < len(self.pk)), self.pk[np.clip(b, 0, len(self.pk) - 1)], 0.0)
+        a = np.minimum(v * WAVE_AMP, WAVE_AMP * 1.15) * WAVE_EDGE   # sfuma verso i bordi
+        m = (self.yy <= a[None, :]) | (self.yy < 1)
+        out = np.zeros((H, W, 3), np.float32)
+        out[m] = (0.88, 0.85, 0.80)
+        out[:, WAVE_XN - 2:WAVE_XN + 2] = (0.25, 0.95, 0.30)          # puntina verde fissa
+        for r in range(30):
+            hw = int((30 - r) * 0.6)
+            out[r, WAVE_XN - hw:WAVE_XN + hw + 1] = (0.25, 0.95, 0.30)
+        return out
+    def close(self): pass
 
 class MontageReader:
     """raffica: seq = [(fotogramma d'inizio, n fotogrammi, clip, s di clip, zoom, cx, cy)]"""
@@ -967,6 +1065,7 @@ class Sources:
                     R = {"aggancio": HookReader, "penna": PenReader}.get(d["name"], ClipReader)
                     if d["name"] == "nero": R = BlackReader
                     elif d["name"] == "raffica": R = MontageReader
+                    elif d["name"] == "wave": R = WaveReader
                     elif "map" in d or "frames" in d: R = MapReader
                     self.cur = (j, R(d, f - fr(d["t0"])))
                 return self.cur[1].read()
@@ -979,24 +1078,15 @@ class Sources:
 def render_frame(f, src):
     t = f / FPS; sec = section(t)
     frame = src.copy() if src is not None else np.zeros((H, W, 3), np.float32)
-    if sec[0] in ("strofa1", "strofa2") and src is not None and not any(
-            fr(d["t0"]) <= f < fr(d["t1"]) for d in bg):   # scossa leggera anche sulle clip in strofa
-        a = 2 if sec[3] == 1 else 5
-        rng = np.random.default_rng(f * 7 + 3)
-        frame = np.roll(frame, tuple(int(v) for v in rng.integers(-a, a + 1, 2)), axis=(0, 1))
+    # v5: immagine ferma (niente scossa / camera a mano); solo zoom centrati in avanti
     p = pulse(t)
+    if any(fr(h0) <= f < fr(h1) for h0, h1, _ in HEART): p = 0.0       # cuore su nero pieno
     if p > 0.002:
         frame = frame * (1 - VIG * p) + RED_F * (VIG * p)
         lk = leak(t, (0.10 if sec[3] == 2 else 0.16) + 0.6 * (p - 0.04))
         frame = 1 - (1 - frame) * (1 - lk)
     if f >= fr(HOOK): draw_phrases(frame, f)
     ipnos_intro(frame, t)
-    for g0, g1, rows in BIG_IMG:
-        if g0 <= f < g1:
-            for im, y in rows: paste_block(frame, im, y, f - g0)
-    if fr(SHAKE_BIG[0]) <= f < fr(SHAKE_BIG[1]):          # schermo che trema
-        rng = np.random.default_rng(f * 11 + 5)
-        frame = np.roll(frame, tuple(int(v) for v in rng.integers(-12, 13, 2)), axis=(0, 1))
     if f in STROBE_F: frame = 1.0 - frame                  # strobo bianco/nero, 2 fotogrammi
     if fr(TB) <= f < fr(TB_END): paste_block(frame, TEMPO_IMG, Y_TEMPO, f - fr(TB))
     if fr(TB2) <= f < fr(TB_END): paste_block(frame, BAST_IMG, Y_BAST, f - fr(TB2))
