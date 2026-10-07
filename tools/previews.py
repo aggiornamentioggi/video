@@ -21,6 +21,8 @@ TRATTI = [
     ("preview_2_specchi.mp4", ins["specchi"]["t0"], ins["specchi"]["t1"]),
     ("preview_3_cervello.mp4", ins["cervello"]["t0"], ins["cervello"]["t1"]),
     ("preview_4_finale.mp4", plan["chiusura"][0], DUR),
+    ("preview_5_fiches.mp4", [d for d in plan["inserti"] if d["name"] == "strada"][0]["t0"],
+     [d for d in plan["inserti"] if d["name"] == "fiches" and not d.get("zoom")][0]["map"][1][0] + 0.75),
 ]
 ONLY = sys.argv[2:]
 res = json.load(open(os.path.join(WORK, "previews.json"))) if ONLY and os.path.exists(

@@ -220,11 +220,16 @@ fit("microfono", CONF, T_VOR, 0.0, clipend("microfono"))
 ins("tramonto", T_VOR, T_MENTE, map=[(T_VOR, T_MENTE, 0.0, 0.8 * (T_MENTE - T_VOR))])
 T_FRESCO = S(L("Torno fresco"))
 fit("pozzo", T_MENTE, T_FRESCO, 0.0, clipend("pozzo"), zoomramp=(1.0, 1.18))
-T_DOM = S(L("Dico solo che non"))              # v6: specchi anche su "e domani resto"
+T_DOM = S(wt("e", L("Ma non torno questo")))
 QUELLO = wt("quello", T_FRESCO)                 # v6: corridoio degli specchi, carrello in avanti
 ins("specchi", T_FRESCO, T_DOM, pulse_at=QUELLO)
-T_INV = S(L("Voglio tutto quello"))
-fit("strada", T_DOM, T_INV, 3.2, clipend("strada"), zoom=1.5, cx=0.45, cy=0.55)
+T_INV = S(L("Voglio tutto quello")); CROLLO_PRIMA = 1.50
+T_DICO = S(L("Dico solo che non"))
+fit("strada", T_DOM, T_DICO, 3.2, clipend("strada"), zoom=1.5, cx=0.45, cy=0.55)   # "e domani resto"
+# v6: "Dico solo che non voglio il resto": stretto sulla fiche rossa in piedi in primo piano, dai
+# primi fotogrammi (prima del crollo, a 1,58 s); zoom 2,3x (a 2,85x il dettaglio si sgrana)
+ins("fiches", T_DICO, T_INV, map=[(T_DICO, T_INV, 0.0, min(CROLLO_PRIMA, T_INV - T_DICO))],
+    zoom=2.3, cx=0.468, cy=0.573, zoomramp=(1.0, 1.05), no_raffica=True)
 T_FIN = wt("Finire")                                      # scatola (v3)
 CROLLO = 1.58                                             # la pila inizia a cadere
 TC = S(wt("investo"))
@@ -368,7 +373,7 @@ ins("cervello", T_CAP, chorus[1][0], map=[(T_CAP, TRAD, BRAIN_IN, CRACK),
 # --- raffica su "Pacato": tutte le clip viste fino a lì, 2-3 fotogrammi l'una, cambio su ogni beat
 seen = []
 for d in sorted(inserts, key=lambda d: d["t0"]):
-    if d["t0"] >= MONTAGE[0] or ("map" not in d and d["name"] != "specchi"): continue
+    if d["t0"] >= MONTAGE[0] or ("map" not in d and d["name"] != "specchi") or d.get("no_raffica"): continue
     if d["name"] == "specchi":                    # v6: immagine ferma (al posto del muro)
         seen.append(("specchi", 0.0, 1.1, 0.5, 0.5)); continue
     m = d["map"][0]; mid_c = (m[2] + m[3]) / 2
