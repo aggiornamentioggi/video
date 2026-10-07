@@ -693,7 +693,8 @@ class MapReader:
             for (a, b, c0, c1) in d["map"]:
                 if a - 1e-6 <= t < b + 1e-6:
                     c = c0 + (t - a) * (c1 - c0) / max(1e-6, b - a); break
-            if c is None: c = d["map"][-1][3]
+            if c is None:                      # fr(t0)/FPS può cadere pochi ms prima di t0
+                c = d["map"][0][2] if t < d["map"][0][0] else d["map"][-1][3]
             idx.append(min(nb - 1, max(0, int(round(c * sf)))))
         self.idx = idx
         z = d.get("zoom", 1.0); vf = "null"
