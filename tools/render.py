@@ -290,7 +290,7 @@ COIN = [k for k in range(22, 73) if k not in COIN_BAD]
 ins("moneta", a, e, frames=COIN, speed=0.5, ferma=TOLGO)  # metà velocità, fermo su "tolgo"
 FLASHES.update({fr(TOLGO) + k: v for k, v in enumerate([1.0, 0.85, 0.6, 0.35, 0.15])})
 a = wt("Sleghiamo"); u = wt("umani", a); e = wt("Corsa", a)
-mapped("corda", a, e, 2.0 - (u - a), 2.0 + (e - u))        # flash dello strappo su "umani"
+mapped("corda", a, e, 2.0 - (u - a), 2.0 + (e - u), salta=[60, 61])   # strappo su "umani"; v9: senza i 2 fotogrammi bianchi
 a = e; e = wt("Sotto", a); oe = clip_len("orologi") - 0.04; mapped("orologi", a, e, oe - (e - a), oe)   # taglio in testa
 a = e; pt = wt("petardo", a); e = wt("Morite", a)
 mapped("mappamondo", a, e, 2.79 - (pt - a), 2.79 + (e - pt))    # esplosione su "petardo"
@@ -487,10 +487,7 @@ for name, t0, t1, lvl in SECTIONS:
             if t0 <= k < t1 and s > 0.6 and k - last > 8 * PERIOD * (0.5 if lvl == 4 else 1):
                 GL_FRAMES.append((fr(k), 7)); last = k
 # testo grande della strofa 2: glitch a ogni frase e sui beat
-STROBE_F = set()
-for g in GRID[(GRID >= STROBE[0] - 0.12) & (GRID < STROBE[1])]:         # lampi sul beat
-    for h in (g, g + PERIOD / 2):
-        if STROBE[0] - 0.12 <= h < STROBE[1]: STROBE_F |= {fr(h), fr(h) + 1}
+STROBE_F = set()                                  # v9: strobo bianco su "chiaro scuro" tolto (era sul lampione)
 
 PLAN = {"durata_video": DUR_V, "frames": N,
         "sezioni": [(s[0], round(s[1], 2), round(min(s[2], DUR_V), 2), s[3]) for s in SECTIONS],
@@ -927,6 +924,14 @@ class MapReader:
             if c is None:                      # fr(t0)/FPS può cadere pochi ms prima di t0
                 c = d["map"][0][2] if t < d["map"][0][0] else d["map"][-1][3]
             idx.append(min(nb - 1, max(0, int(round(c * sf)))))
+        if d.get("salta"):                         # fotogrammi da non mostrare (es. flash bianchi)
+            bad = set(d["salta"])
+            def ok(j):
+                for dj in range(1, 10):
+                    if j + dj not in bad and j + dj < nb: return j + dj
+                    if j - dj not in bad and j - dj >= 0: return j - dj
+                return j
+            idx = [ok(j) if j in bad else j for j in idx]
         self.idx = idx
         z = d.get("zoom", 1.0); vf = "null"
         if z > 1.001:

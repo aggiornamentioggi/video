@@ -1,6 +1,14 @@
-# REPORT v8 (intro v7, mano e cestino in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
+# REPORT v9 (intro v7, mano e cestino, senza flash: in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
 
 Render completo con `tools/build.py` dalla timeline v6 di `tools/render.py` (esportato dopo "ok export"): è la v5 con main unito (cervello, corridoio di specchi, logo) e solo le modifiche richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
+
+## v9: niente flash bianchi su lampione e corda (in anteprima, export completo dopo "ok export")
+
+Il video completo in `out/` è ancora la v6. Anteprime: `out/preview/preview_lampione.mp4` e `out/preview/preview_corda.mp4` (720p, CRF 28, con l'audio, 1 s prima e dopo). Controllo dei bordi: 0 fotogrammi fuori soglia.
+
+- **Lampione** ("Vedo il chiaro scuro … sarà buio", 99,03–103,36 s): tolto lo strobo bianco/nero su "chiaro scuro" (4 lampi da 2 fotogrammi, immagine invertita). Il lampione resta acceso, si spegne su "più scuro" e va al buio pieno su "buio" come prima. Lo sfarfallio della luce mentre si spegne è nella clip e non è un flash bianco. Luminosità massima del tratto: 50 su 255.
+- **Corda** ("Sleghiamo legami stupidi umani", 53,92–56,08 s): la clip ha due fotogrammi quasi bianchi sullo strappo (60-61, luminosità 216 contro 3). Li salto e al loro posto tengo il fotogramma scuro subito dopo, quindi lo strappo resta su "umani" senza flash. Luminosità massima del tratto: 63 su 255.
+- Tempi e tutto il resto invariati. L'unico flash rimasto nel video è quello su "tolgo" della moneta, che avevi chiesto e non era in questa richiesta.
 
 ## v8: mano e cestino su "Solo soldato … ma sono tornato" (in anteprima, export completo dopo "ok export")
 

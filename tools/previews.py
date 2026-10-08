@@ -28,7 +28,9 @@ TRATTI = [
     ("preview_intro.mp4", 0.0, [d for d in plan["inserti"] if d["name"] == "tramonto"][0]["t0"], 0.0),
     # v8: cestino, da "quello che ho fatto" a fine "lavorare per vivere" (senza margine)
     ("preview_cestino.mp4", next(w["inizio"] for w in WORDS if w["parola"] == "quello" and 38 < w["inizio"] < 39),
-     next(w["inizio"] for w in WORDS if w["parola"] == "Vivere" and 44 < w["inizio"] < 45), 0.0),
+     next(w["inizio"] for w in WORDS if w["parola"] == "Vivere" and 44 < w["inizio"] < 45), 0.0),    # v9: senza flash bianchi
+    ("preview_corda.mp4", ins["corda"]["t0"], ins["corda"]["t1"]),
+    ("preview_lampione.mp4", ins["lampione"]["t0"], ins["lampione"]["t1"]),
 ]
 ONLY = sys.argv[2:]
 res = json.load(open(os.path.join(WORK, "previews.json"))) if ONLY and os.path.exists(
