@@ -1,4 +1,4 @@
-# REPORT v12 (vinile vero nell'intro e modifiche v7–v10: in anteprima) / v6 (video completo) / v6 (video completo): "Non Mi Fermo" (Ipnos)
+# REPORT v12 (vinile vero nell'intro e modifiche v7–v10: in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
 
 Render completo con `tools/build.py` dalla timeline v6 di `tools/render.py` (esportato dopo "ok export"): è la v5 con main unito (cervello, corridoio di specchi, logo) e solo le modifiche richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
 
