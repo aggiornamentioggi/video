@@ -1041,102 +1041,146 @@ class WaveReader:
         return out
     def close(self): pass
 
-# ---------------------------------------------------------------- vinile (v11)
-# Immagine del giradischi a pieno schermo, senza crop né correzioni. Girano in senso orario a 33 giri:
-# l'etichetta (attorno al suo centro; il perno ruota su sé stesso) e l'anello stroboscopico del piatto
-# (ellisse leggermente prospettica, srotolato in coordinate polari: i puntini girano, la luce resta
-# ferma). La fascia con i solchi e i riflessi resta ferma; braccio e puntina stanno sopra a tutto.
-VIN_SPINDLE = (461.75, 759.5); VIN_SPINDLE_R = 19          # perno (px dell'immagine 941x1672)
-VIN_LABEL = (454.8, 760.0); VIN_LABEL_R = 248.0            # etichetta (cerchio stimato dal bordo)
-VIN_RING = (464.2, 780.4); VIN_RING_K = 1397.4 / 1355.7    # anello: centro e schiacciamento (y/x)
-VIN_RING_R = (630.0, 722.0)                                # fascia dell'anello (raggi in px x)
-VIN_ARM = [(640, 1030), (941, 960), (941, 1120), (760, 1330), (660, 1300)]   # braccio e testina
+# ---------------------------------------------------------------- vinile (v11b)
+# Immagine del giradischi a pieno schermo, senza crop né correzioni. Tutto il disco (etichetta, vinile
+# con i solchi, anello del piatto con i puntini) gira in senso orario a 33 giri attorno al perno; i
+# riflessi di luce restano fermi. Separazione di frequenza in coordinate polari centrate sul perno:
+# luce = sfocatura forte solo lungo l'angolo; dettagli = originale - luce; ruota solo il dettaglio.
+# Il piatto in foto è appena prospettico: centro e schiacciamento delle "circonferenze" passano dal
+# perno (raggio 0) al centro dell'ellisse dei puntini (raggio dell'anello) con legge quadratica.
+VIN_SPINDLE = (461.75, 759.5)                              # perno (px dell'immagine 941x1672)
+VIN_RING_C = (464.2, 780.4); VIN_RING_K = 1397.4 / 1355.7  # ellisse dei puntini: centro, y/x
+VIN_RING_RM = 695.0                                        # raggio medio dei puntini
+VIN_R_OUT = 722.0                                          # fine del piatto (bordo metallico)
+VIN_LABEL_R = 262.0                                        # entro questo raggio: luce = media (etichetta)
+VIN_ARM = [(669, 1214), (696, 1172), (789, 1111), (855, 1078), (897, 1039), (941, 1025), (941, 1071),
+           (922, 1100), (875, 1145), (805, 1200), (752, 1264), (706, 1287), (669, 1242)]   # braccio e testina
 VIN_W = 2 * math.pi * 33.333 / 60                         # rad/s
+VIN_NT = 4400
 _VIN = {}
+def vin_geom(r):
+    """centro e schiacciamento della circonferenza di raggio r (px, asse x)"""
+    q = (np.asarray(r, np.float32) / VIN_RING_RM) ** 2
+    cx = VIN_SPINDLE[0] + (VIN_RING_C[0] - VIN_SPINDLE[0]) * q
+    cy = VIN_SPINDLE[1] + (VIN_RING_C[1] - VIN_SPINDLE[1]) * q
+    k = 1.0 + (VIN_RING_K - 1.0) * q
+    return cx, cy, k
+
 def vinyl_setup():
     if _VIN: return _VIN
     import cv2
-    img = np.asarray(Image.open(SRC["vinile"]).convert("RGB"), np.float32) / 255
-    ih, iw = img.shape[:2]
-    yy, xx = np.mgrid[0:ih, 0:iw].astype(np.float32)
-    # etichetta senza perno (inpainting), perno a parte
-    sp = np.hypot(xx - VIN_SPINDLE[0], yy - VIN_SPINDLE[1])
-    m8 = (sp < VIN_SPINDLE_R + 4).astype(np.uint8)
-    lab = cv2.inpaint((img * 255).astype(np.uint8), m8, 7, cv2.INPAINT_TELEA).astype(np.float32) / 255
-    soft = lambda d, r, f: np.clip((r - d) / f + 0.5, 0, 1)[..., None]
-    m_sp = soft(sp, VIN_SPINDLE_R + 1, 2.0)
-    m_lab = soft(np.hypot(xx - VIN_LABEL[0], yy - VIN_LABEL[1]), VIN_LABEL_R - 1, 2.5)
-    # anello in polari (raggio normalizzato sull'asse x)
-    u = xx - VIN_RING[0]; v = (yy - VIN_RING[1]) / VIN_RING_K
-    rr = np.hypot(u, v); th = np.mod(np.arctan2(v, u), 2 * math.pi)
-    r0, r1 = VIN_RING_R; nr = int(r1 - r0) + 9; nt = 4400
-    rg = r0 - 4 + np.arange(nr, dtype=np.float32); tg = np.arange(nt, dtype=np.float32) * 2 * math.pi / nt
-    RG, TG = np.meshgrid(rg, tg, indexing="ij")
-    mx = (VIN_RING[0] + RG * np.cos(TG)).astype(np.float32); my = (VIN_RING[1] + VIN_RING_K * RG * np.sin(TG)).astype(np.float32)
-    P = cv2.remap(img, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-    valid = ((mx >= 0) & (mx <= iw - 1) & (my >= 0) & (my <= ih - 1)).all(0)          # colonne visibili
-    # luce: media mobile lungo l'angolo (solo colonne visibili), poi interpolata nei settori fuori campo
     from scipy.ndimage import gaussian_filter1d
-    wv = valid.astype(np.float32)
-    num = gaussian_filter1d(P * wv[None, :, None], 120, axis=1, mode="wrap")
-    den = gaussian_filter1d(np.broadcast_to(wv[None, :, None], P.shape).astype(np.float32), 120, axis=1, mode="wrap")
-    L = num / np.maximum(den, 1e-4)
-    idx = np.arange(nt); vi = idx[valid]
-    for c in range(3):
-        for i in range(nr):
-            L[i, :, c] = np.interp(idx, vi, L[i, vi, c], period=nt)
-    L = np.maximum(L, 0.02)
-    A = P / L
-    # disegno nei settori fuori campo: ripetizione del settore visibile più lungo (motivo periodico)
-    runs, j = [], 0
-    vv = np.concatenate([valid, valid])
-    while j < nt:
-        if vv[j]:
-            k = j
-            while k < j + nt and vv[k]: k += 1
-            runs.append((j, k)); j = k
-        else: j += 1
-    a0, a1 = max(runs, key=lambda r: r[1] - r[0]); a0 += 20; a1 -= 20
-    tpl = A[:, np.arange(a0, a1) % nt]
-    for j in np.where(~valid)[0]:
-        A[:, j] = tpl[:, (j - a1) % tpl.shape[1]]
-    m_ring = (soft(rr, r1, 3.0) * (1 - soft(rr, r0, 3.0)))
-    # braccio e testina: maschera dal poligono, sopra a tutto
+    img = np.asarray(Image.open(SRC["vinile"]).convert("RGB"), np.float32) / 255
+    ih, iw = img.shape[:2]; nt = VIN_NT
+    nr = int(VIN_R_OUT) + 8
+    rg = np.arange(nr, dtype=np.float32); tg = np.arange(nt, dtype=np.float32) * 2 * math.pi / nt
+    RG, TG = np.meshgrid(rg, tg, indexing="ij")
+    gcx, gcy, gk = vin_geom(RG)
+    mx = (gcx + RG * np.cos(TG)).astype(np.float32); my = (gcy + gk * RG * np.sin(TG)).astype(np.float32)
+    P = cv2.remap(img, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
     am = Image.new("L", (iw, ih), 0); ImageDraw.Draw(am).polygon(VIN_ARM, fill=255)
-    m_arm = (np.asarray(am.filter(ImageFilter.GaussianBlur(2)), np.float32) / 255)[..., None]
-    _VIN.update(img=img, lab=lab, m_sp=m_sp, m_lab=m_lab, m_ring=m_ring, m_arm=m_arm, A=A, L=L,
-                rr=rr, th=th, r0=r0 - 4, nt=nt, ih=ih, iw=iw)
+    am = am.filter(ImageFilter.MaxFilter(7)).filter(ImageFilter.GaussianBlur(2))
+    m_arm2 = np.asarray(am, np.float32) / 255
+    arm_p = cv2.remap(np.asarray(am.filter(ImageFilter.MaxFilter(9)), np.float32) / 255, mx, my, cv2.INTER_LINEAR)
+    # pixel validi: dentro l'immagine e non sotto il braccio (il braccio non deve girare)
+    valid = (mx >= 0) & (mx <= iw - 1) & (my >= 0) & (my <= ih - 1) & (arm_p < 0.02)
+    # 1) strato luce: sfocatura forte solo lungo l'angolo, sui soli pixel validi. Sul vinile stretta
+    #    (~1,2°: i riflessi restano tutti nella luce), sull'anello larga (~5°: i puntini girano);
+    #    nell'etichetta la luce è la media della circonferenza (invariante alla rotazione)
+    wv = valid.astype(np.float32)[..., None]
+    def angblur(sd):
+        sg = nt * sd / 360
+        num = gaussian_filter1d(P * wv, sg, axis=1, mode="wrap")
+        den = gaussian_filter1d(np.repeat(wv, 3, 2), sg, axis=1, mode="wrap")
+        return num / np.maximum(den, 1e-4)
+    wr = np.clip((rg - 615.0) / 20.0, 0, 1)[:, None, None]
+    Ls = angblur(1.2) * (1 - wr) + angblur(5.0) * wr
+    Lm = (P * wv).sum(1, keepdims=True) / np.maximum(wv.sum(1, keepdims=True), 1)
+    wl = np.clip((rg - VIN_LABEL_R) / 14.0, 0, 1)[:, None, None]
+    L = Lm * (1 - wl) + Ls * wl
+    # 2) strato dettagli = originale - luce
+    D = P - L
+    # settori fuori dall'immagine (il piatto è tagliato ai lati): luce interpolata lungo l'angolo,
+    # dettaglio ripetuto dal tratto visibile più lungo della stessa circonferenza
+    idx = np.arange(nt)
+    for i in range(nr):
+        vr = valid[i]
+        if vr.all(): continue
+        vi = idx[vr]
+        for c in range(3): L[i, :, c] = np.interp(idx, vi, L[i, vi, c], period=nt)
+        vv = np.concatenate([vr, vr]); runs, j = [], 0
+        while j < nt:
+            if vv[j]:
+                k = j
+                while k < j + nt and vv[k]: k += 1
+                runs.append((j, k)); j = k
+            else: j += 1
+        b0, b1 = max(runs, key=lambda r_: r_[1] - r_[0]); b0 += 10; b1 -= 10
+        tpl = D[i, np.arange(b0, b1) % nt].copy()
+        miss = np.where(~vr)[0]
+        D[i, miss] = tpl[(miss - b1) % len(tpl)]
+        # giunzioni: dissolvenza di 30 campioni con il lato visibile (specchiato), niente scalini
+        F = 30
+        edges = np.where(vr != np.roll(vr, 1))[0]
+        for e0 in edges:
+            inside_right = not vr[e0]                       # da e0 in poi è mancante
+            for kk in range(F):
+                w_ = 1 - kk / F
+                jm = (e0 + kk) % nt if inside_right else (e0 - 1 - kk) % nt
+                jv = (e0 - 1 - kk) % nt if inside_right else (e0 + kk) % nt
+                if not vr[jm] and vr[jv]: D[i, jm] = D[i, jm] * (1 - w_) + D[i, jv] * w_
+    # 3) polvere e micro-graffi sul vinile, solidali con il disco
+    rng = np.random.default_rng(33)
+    dust = np.zeros(D.shape[:2], np.float32)
+    for _ in range(170):                                   # granelli: 1-2 px, chiari
+        r_ = rng.uniform(VIN_LABEL_R + 15, 618); t_ = rng.uniform(0, nt)
+        a = rng.uniform(0.10, 0.28); sr = rng.uniform(0.6, 1.3); st = sr * nt / (2 * math.pi * r_)
+        i0, j0 = int(r_), int(t_)
+        for di in range(-3, 4):
+            for dj in range(-int(3 * st) - 1, int(3 * st) + 2):
+                dust[(i0 + di) % nr, (j0 + dj) % nt] += a * math.exp(-(di * di) / (2 * sr * sr) - (dj * dj) / (2 * st * st))
+    for _ in range(24):                                    # micro-graffi: archi corti e sottili
+        r_ = rng.uniform(VIN_LABEL_R + 20, 610); t_ = rng.uniform(0, nt)
+        ln = rng.uniform(12, 45) * nt / (2 * math.pi * r_); slope = rng.uniform(-0.15, 0.15)
+        a = rng.uniform(0.06, 0.14)
+        for s_ in np.linspace(0, ln, int(ln) + 2):
+            ii = int(round(r_ + slope * s_ * 2 * math.pi * r_ / nt)); jj = int(t_ + s_) % nt
+            dust[ii % nr, jj] += a
+    D = D + dust[..., None] * np.array([1.0, 0.92, 0.80], np.float32)
+    # coordinate polari di ogni pixel dell'immagine (inversione numerica della geometria)
+    yy, xx = np.mgrid[0:ih, 0:iw].astype(np.float32)
+    r_px = np.hypot(xx - VIN_SPINDLE[0], yy - VIN_SPINDLE[1])
+    for _ in range(4):
+        cx_, cy_, k_ = vin_geom(r_px)
+        r_px = np.hypot(xx - cx_, (yy - cy_) / k_)
+    cx_, cy_, k_ = vin_geom(r_px)
+    th_px = np.mod(np.arctan2((yy - cy_) / k_, xx - cx_), 2 * math.pi)
+    soft = lambda d, r, f: np.clip((r - d) / f + 0.5, 0, 1)[..., None]
+    m_disc = soft(r_px, VIN_R_OUT, 3.0)                    # disco + piatto (fino al bordo metallico)
+    m_arm = m_arm2[..., None]
+    rmap = r_px.astype(np.float32); tmap0 = (th_px * nt / (2 * math.pi)).astype(np.float32)
+    Lc = cv2.remap(L.astype(np.float32), tmap0, rmap, cv2.INTER_LINEAR, borderMode=cv2.BORDER_WRAP)
+    _VIN.update(img=img, D=D.astype(np.float32), Lc=Lc, m_disc=m_disc, m_arm=m_arm, rmap=rmap, tmap0=tmap0,
+                th=th_px, r=r_px, nt=nt, ih=ih, iw=iw)
     return _VIN
 
 def vinyl_frame(t, u_zoom):
     """t: secondi dall'inizio dell'inserto; u_zoom: 0 -> 1 lungo l'inserto (zoom 1,00 -> 1,06)"""
     import cv2
-    V = vinyl_setup(); ih, iw = V["ih"], V["iw"]
-    blur = VIN_W / FPS * 0.12                      # leggero motion blur (otturatore ~43°): i puntini restano leggibili
-    subs = [t * VIN_W + blur * (k / 4 - 0.5) for k in range(5)]
-    # etichetta: rotazione oraria attorno al suo centro
-    lab = np.zeros_like(V["img"])
-    for ph in subs:
-        M = cv2.getRotationMatrix2D(VIN_LABEL, -math.degrees(ph), 1.0)
-        lab += cv2.warpAffine(V["lab"], M, (iw, ih), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
-    lab /= len(subs)
-    # anello: il disegno gira, la luce resta
-    ring = np.zeros_like(V["img"])
-    rmap = (V["rr"] - V["r0"]).astype(np.float32)
-    for ph in subs:
-        tmap = (np.mod(V["th"] - ph, 2 * math.pi) * V["nt"] / (2 * math.pi)).astype(np.float32)
-        ring += cv2.remap(V["A"], tmap, rmap, cv2.INTER_LINEAR, borderMode=cv2.BORDER_WRAP)
-    ring /= len(subs)
-    Lm = cv2.remap(V["L"], (V["th"] * V["nt"] / (2 * math.pi)).astype(np.float32), rmap, cv2.INTER_LINEAR,
-                   borderMode=cv2.BORDER_WRAP)
-    ring = ring * Lm
-    out = V["img"].copy()
-    out = out * (1 - V["m_ring"]) + ring * V["m_ring"]
-    out = out * (1 - V["m_lab"]) + lab * V["m_lab"]
-    out = out * (1 - V["m_sp"]) + V["img"] * V["m_sp"]       # perno: ruota su sé stesso (identico)
-    out = out * (1 - V["m_arm"]) + V["img"] * V["m_arm"]     # braccio e puntina sopra a tutto
-    # zoom lentissimo in avanti centrato sul perno, a pieno schermo
-    s_ = 1.0 + 0.06 * (u_zoom * u_zoom * (3 - 2 * u_zoom))
+    V = vinyl_setup(); ih, iw = V["ih"], V["iw"]; nt = V["nt"]
+    phi = t * VIN_W                                        # rotazione oraria (y verso il basso)
+    blur = VIN_W / FPS * 0.15                              # motion blur leggero: arco fisso, quindi
+    acc = np.zeros_like(V["img"])                          # proporzionale alla distanza dal centro
+    for q in np.linspace(-0.5, 0.5, 7):
+        tm = np.mod(V["tmap0"] - (phi + q * blur) * nt / (2 * math.pi), nt).astype(np.float32)
+        acc += cv2.remap(V["D"], tm, V["rmap"], cv2.INTER_LINEAR, borderMode=cv2.BORDER_WRAP)
+    det = acc / 7
+    # ondeggiamento dei riflessi: ±2,5% a ogni giro, come un disco non perfettamente piatto
+    wob = 1.0 + 0.025 * np.sin(V["th"] - phi)[..., None] * np.clip((V["r"] - VIN_LABEL_R) / 40, 0, 1)[..., None]
+    disc = np.clip(V["Lc"] * wob + det, 0, 1)
+    out = V["img"] * (1 - V["m_disc"]) + disc * V["m_disc"]
+    out = out * (1 - V["m_arm"]) + V["img"] * V["m_arm"]   # braccio e puntina sopra a tutto, fermi
+    s_ = 1.0 + 0.06 * (u_zoom * u_zoom * (3 - 2 * u_zoom))  # zoom lentissimo sul perno
     sx, sy = W / iw * s_, H / ih * s_
     cx, cy = VIN_SPINDLE
     M = np.float32([[sx, 0, cx * W / iw - sx * cx], [0, sy, cy * H / ih - sy * cy]])
