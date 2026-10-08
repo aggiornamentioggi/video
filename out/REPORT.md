@@ -1,3 +1,16 @@
+# MASTER ALTA QUALITÀ (Git LFS)
+
+Stesso montaggio finale v14, ricodificato con qualità più alta e senza il limite dei 95 MB.
+
+| File | Dimensione | Video | Audio | Bordi |
+|---|---|---|---|---|
+| `out/non_mi_fermo_master_1080x1920.mp4` | 202,7 MB | H.264 CRF 17, preset slow, yuv420p, 1080x1920, 30 fps, ~8,7 Mbit/s | AAC 256 kbps | 0 / 5391 fotogrammi fuori soglia |
+
+- Codificato dallo stesso intermedio quasi lossless (CRF 8) della versione finale; `+faststart`; dissolvenza audio finale 0,5 s; durata 179,70 s.
+- Supera i 100 MB consentiti da GitHub per i file normali, quindi è salvato con **Git LFS** (`.gitattributes`).
+- Download: aprire https://github.com/aggiornamentioggi/video/blob/claude/non-mi-fermo-v3/out/non_mi_fermo_master_1080x1920.mp4 e premere "Download raw file" (anche da telefono, dal browser).
+- La quota gratuita di Git LFS è di circa 1 GB di banda al mese, quindi circa 4–5 download completi al mese.
+
 # REPORT FINALE: "Non Mi Fermo" (Ipnos)
 
 Export completo dopo "ok export", da `tools/build.py` con la timeline finale di `tools/render.py` (v14).
