@@ -1,8 +1,18 @@
-# REPORT v11 (vinile nell'intro e modifiche v7–v10: in anteprima) / v6 (video completo) / v6 (video completo): "Non Mi Fermo" (Ipnos)
+# REPORT v12 (vinile vero nell'intro e modifiche v7–v10: in anteprima) / v6 (video completo) / v6 (video completo): "Non Mi Fermo" (Ipnos)
 
 Render completo con `tools/build.py` dalla timeline v6 di `tools/render.py` (esportato dopo "ok export"): è la v5 con main unito (cervello, corridoio di specchi, logo) e solo le modifiche richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
 
-## v11: vinile tra la porta e lo studio (in anteprima, export completo dopo "ok export")
+## v12: vinile vero tra la porta e lo studio (in anteprima, export completo dopo "ok export")
+
+Il video completo in `out/` è ancora la v6. Anteprima: `out/preview/preview_vinile.mp4` (dalla porta, 3,20 s, a "Torno sul pezzo", 9,91 s; 720p, CRF 28, con l'audio). Controllo dei bordi: 0 fotogrammi fuori soglia su 201.
+
+- L'inserto del vinile fatto ruotando l'immagine del giradischi (v11/v11b) è eliminato del tutto: codice rimosso dallo script, l'immagine statica non è più usata.
+- Al suo posto `vinile_vero.mp4` (1080x1920, 23,976 fps, 3 s), dall'inizio, a velocità normale: 0–2,09 s della clip sui 2,09 s dell'inserto (5,29–7,38 s), con gli stessi stacchi sul beat (porta → vinile a 5,29 s, vinile → studio a 7,38 s).
+- Così com'è: niente crop, zoom, correzioni di luce o colore, rotazioni o effetti. In questo tratto non applico la color grading né la grana che il resto del video aggiunge. Unica conversione: da 23,976 a 30 fps del video, prendendo il fotogramma più vicino senza interpolare. Un fotogramma confrontato con l'originale: identico, a parte la compressione.
+- Porta, studio con le cuffie su "Torno sul pezzo" e il resto del video invariati (cambia solo questo inserto nel piano).
+- Niente flash, tremolio o bande.
+
+## v11: vinile tra la porta e lo studio — SOSTITUITO dalla v12 (storico)
 
 Modificata solo l'intro tra la porta e lo studio. Il video completo in `out/` è ancora la v6. Anteprima: `out/preview/preview_vinile.mp4` (dalla porta, 3,20 s, a "Torno sul pezzo", 9,91 s; 720p, CRF 28, con l'audio). Controllo dei bordi: 0 fotogrammi fuori soglia su 201. Stacchi sul beat a 5,29 (porta → vinile), 7,38 (vinile → studio), 7,80 e 8,22 (inquadrature dello studio).
 
