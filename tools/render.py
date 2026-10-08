@@ -456,7 +456,6 @@ def split_phrase(ix):
 lines = {}
 for i, w in enumerate(WORDS):
     if w["inizio"] < TORNO - 0.2: continue
-    if TB - 0.05 <= w["inizio"] < TB_END and clean(w["parola"]) in ("tempo", "bastardo"): continue
     lines.setdefault(w["idx_riga"], []).append(i)
 phrases = []
 for li in sorted(lines): phrases += split_phrase(lines[li])
@@ -467,7 +466,6 @@ for p, ix in enumerate(phrases):
     a = WORDS[ix[0]]["inizio"]
     nxt = WORDS[phrases[p + 1][0]]["inizio"] if p + 1 < len(phrases) else WORDS[ix[-1]]["fine"] + 0.6
     end = nxt if nxt - WORDS[ix[-1]]["inizio"] < 1.4 else WORDS[ix[-1]]["inizio"] + 1.0
-    if a < TB <= end: end = TB
     end = min(end, CLOSE)
     if any(b0 - 0.05 <= a < b1 for b0, b1, _ in BIG): continue         # lì c'è il testo grande
     for b0, b1, _ in BIG:
@@ -1184,8 +1182,7 @@ def render_frame(f, src):
     if f >= fr(HOOK): draw_phrases(frame, f)
     ipnos_intro(frame, t)
     if f in STROBE_F: frame = 1.0 - frame                  # strobo bianco/nero, 2 fotogrammi
-    if fr(TB) <= f < fr(TB_END): paste_block(frame, TEMPO_IMG, Y_TEMPO, f - fr(TB))
-    if fr(TB2) <= f < fr(TB_END): paste_block(frame, BAST_IMG, Y_BAST, f - fr(TB2))
+    # v10: TEMPO BASTARDO nei sottotitoli normali, niente scritta grande
     if f >= fr(HIT1): paste_block(frame, NMF, Y_NMF_V6, f - fr(HIT1))
     if f >= fr(HIT2): paste_logo(frame, f - fr(HIT2))           # v6: logo dove entrava IPNOS
     for g0, amp in GL_FRAMES:

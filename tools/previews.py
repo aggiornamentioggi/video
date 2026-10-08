@@ -30,7 +30,8 @@ TRATTI = [
     ("preview_cestino.mp4", next(w["inizio"] for w in WORDS if w["parola"] == "quello" and 38 < w["inizio"] < 39),
      next(w["inizio"] for w in WORDS if w["parola"] == "Vivere" and 44 < w["inizio"] < 45), 0.0),    # v9: senza flash bianchi
     ("preview_corda.mp4", ins["corda"]["t0"], ins["corda"]["t1"]),
-    ("preview_lampione.mp4", ins["lampione"]["t0"], ins["lampione"]["t1"]),
+    ("preview_lampione.mp4", ins["lampione"]["t0"], ins["lampione"]["t1"]),    # v10: "Corsa per il tempo bastardo" con i sottotitoli normali
+    ("preview_tempo_bastardo.mp4", ins["orologi"]["t0"], ins["orologi"]["t1"]),
 ]
 ONLY = sys.argv[2:]
 res = json.load(open(os.path.join(WORK, "previews.json"))) if ONLY and os.path.exists(

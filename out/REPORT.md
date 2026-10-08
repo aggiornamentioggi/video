@@ -1,6 +1,14 @@
-# REPORT v9 (intro v7, mano e cestino, senza flash: in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
+# REPORT v10 (intro v7, mano e cestino, senza flash, tempo bastardo normale: in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
 
 Render completo con `tools/build.py` dalla timeline v6 di `tools/render.py` (esportato dopo "ok export"): è la v5 con main unito (cervello, corridoio di specchi, logo) e solo le modifiche richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
+
+## v10: "tempo bastardo" nei sottotitoli normali (in anteprima, export completo dopo "ok export")
+
+Il video completo in `out/` è ancora la v6. Anteprima: `out/preview/preview_tempo_bastardo.mp4` (orologi, 56,08–57,52 s, con 1 s prima e dopo; 720p, CRF 28, con l'audio). Controllo dei bordi: 0 fotogrammi fuori soglia.
+
+- Tolta la scritta grande centrale "TEMPO / BASTARDO".
+- "Corsa per il tempo bastardo" ora è nei sottotitoli normali, come il resto del video (stesso font, dimensione, fascia 70-80%, karaoke), in due frasi: "Corsa per" / "il tempo bastardo". "Tempo" e "bastardo" restano rossi, come le altre parole chiave.
+- Clip, tempi e il resto invariati (stesso piano degli inserti).
 
 ## v9: niente flash bianchi su lampione e corda (in anteprima, export completo dopo "ok export")
 
