@@ -64,7 +64,9 @@ NEW_CLIPS = {"tramonto": "tramonto", "ufficio": "ufficio", "brocca": "brocca", "
              "cervello": "The-existing-crack-on-the-plaster", "specchi": "Corridoio infinito di specchi",
              "logo": "Logo IPNOS Creative Studio",
              # v8
-             "cestino": "A-single-crumpled-paper-ball-falls"}
+             "cestino": "A-single-crumpled-paper-ball-falls",
+             # v11
+             "vinile": "Vinile al neon"}
 for _k, _p in NEW_CLIPS.items():
     if find_src([_p]): SRC[_k] = find_src([_p])
 OPTIONAL = ["moneta", "goccia", "carte", "petardo", "mare", "lampione", "personaggio", "performance"]
@@ -214,15 +216,18 @@ CONF = wt("Confesso")
 # v7: studio montato come multicamera: stessa clip, tempo continuo, crop diversi con stacco sul beat
 T_DICO1 = S(L("Dico le cose"))                            # qui parte il microfono
 _se = clipend("studio")
+# v11: dopo la porta, vinile per ~2 s (5 beat); poi lo studio parte a 1x circa 1,4 s prima che le
+# cuffie arrivino in testa su "Torno" (tolta la parte ferma con le cuffie in mano)
+VIN1 = float(GRID[np.argmin(np.abs(GRID - (STUDIO0 + 2.0)))])
+ins("vinile", STUDIO0, VIN1)
 def studio_c(t):                                          # tempo di clip continuo (cuffie su "Torno")
-    if t <= TORNO_T: return CUFFIE_C * (t - STUDIO0) / (TORNO_T - STUDIO0)
+    if t <= TORNO_T: return CUFFIE_C - (TORNO_T - t)
     return CUFFIE_C + (_se - CUFFIE_C) * (t - TORNO_T) / (T_DICO1 - TORNO_T)
-_g = [float(g) for g in GRID if STUDIO0 + 0.05 < g < T_DICO1 - 0.05]
-B1 = _g[0]                                                # 1 beat larga
-B2 = [g for g in _g if studio_c(g) <= 1.25][-1]           # stretta sulle cuffie finché sono in mano
+_g = [float(g) for g in GRID if VIN1 + 0.05 < g < T_DICO1 - 0.05]
+B1, B2 = _g[0], _g[1]                                     # 1 beat larga, 1 beat stretta
 CUT_F = CUT_S1                                            # "Forse": beat dopo "Torno sul pezzo"
-SHOTS = [(STUDIO0, B1, dict(zoom=1.35, cx=0.48, cy=0.30)),            # 1) larga come prima
-         (B1, B2, dict(zoom=2.0, cx=0.47, cy=0.54)),                  # 2) stretta sulle cuffie in mano
+SHOTS = [(VIN1, B1, dict(zoom=1.35, cx=0.48, cy=0.30)),               # 1) larga come prima
+         (B1, B2, dict(zoom=2.0, cx=0.48, cy=0.20)),                  # 2) stretta: mani e cuffie che salgono
          (B2, CUT_F, dict(zoom=1.5, cx=0.40, cy=0.30,                 # 3) media spalle e testa
                          punchin=(TORNO_T, 1.12, 3)))]                # punch-in sul colpo di "Torno"
 _fg = [g for g in _g if CUT_F - 0.05 <= g] + [T_DICO1]
@@ -514,7 +519,7 @@ def prep():
                 subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", src, "-vf",
                     f"{CROP},scale={int(W * 1.2)}:{int(H * 1.2)}:flags=lanczos,{GRADE}", "-frames:v", "1", out])
             continue
-        if name == "logo": continue                # usato così com'è (bianco su nero)
+        if name in ("logo", "vinile"): continue    # usati così come sono (niente grading)
         if name == "penna":
             out = os.path.join(PREP, "penna.png")
             subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", src, "-vf",
@@ -1036,6 +1041,115 @@ class WaveReader:
         return out
     def close(self): pass
 
+# ---------------------------------------------------------------- vinile (v11)
+# Immagine del giradischi a pieno schermo, senza crop né correzioni. Girano in senso orario a 33 giri:
+# l'etichetta (attorno al suo centro; il perno ruota su sé stesso) e l'anello stroboscopico del piatto
+# (ellisse leggermente prospettica, srotolato in coordinate polari: i puntini girano, la luce resta
+# ferma). La fascia con i solchi e i riflessi resta ferma; braccio e puntina stanno sopra a tutto.
+VIN_SPINDLE = (461.75, 759.5); VIN_SPINDLE_R = 19          # perno (px dell'immagine 941x1672)
+VIN_LABEL = (454.8, 760.0); VIN_LABEL_R = 248.0            # etichetta (cerchio stimato dal bordo)
+VIN_RING = (464.2, 780.4); VIN_RING_K = 1397.4 / 1355.7    # anello: centro e schiacciamento (y/x)
+VIN_RING_R = (630.0, 722.0)                                # fascia dell'anello (raggi in px x)
+VIN_ARM = [(640, 1030), (941, 960), (941, 1120), (760, 1330), (660, 1300)]   # braccio e testina
+VIN_W = 2 * math.pi * 33.333 / 60                         # rad/s
+_VIN = {}
+def vinyl_setup():
+    if _VIN: return _VIN
+    import cv2
+    img = np.asarray(Image.open(SRC["vinile"]).convert("RGB"), np.float32) / 255
+    ih, iw = img.shape[:2]
+    yy, xx = np.mgrid[0:ih, 0:iw].astype(np.float32)
+    # etichetta senza perno (inpainting), perno a parte
+    sp = np.hypot(xx - VIN_SPINDLE[0], yy - VIN_SPINDLE[1])
+    m8 = (sp < VIN_SPINDLE_R + 4).astype(np.uint8)
+    lab = cv2.inpaint((img * 255).astype(np.uint8), m8, 7, cv2.INPAINT_TELEA).astype(np.float32) / 255
+    soft = lambda d, r, f: np.clip((r - d) / f + 0.5, 0, 1)[..., None]
+    m_sp = soft(sp, VIN_SPINDLE_R + 1, 2.0)
+    m_lab = soft(np.hypot(xx - VIN_LABEL[0], yy - VIN_LABEL[1]), VIN_LABEL_R - 1, 2.5)
+    # anello in polari (raggio normalizzato sull'asse x)
+    u = xx - VIN_RING[0]; v = (yy - VIN_RING[1]) / VIN_RING_K
+    rr = np.hypot(u, v); th = np.mod(np.arctan2(v, u), 2 * math.pi)
+    r0, r1 = VIN_RING_R; nr = int(r1 - r0) + 9; nt = 4400
+    rg = r0 - 4 + np.arange(nr, dtype=np.float32); tg = np.arange(nt, dtype=np.float32) * 2 * math.pi / nt
+    RG, TG = np.meshgrid(rg, tg, indexing="ij")
+    mx = (VIN_RING[0] + RG * np.cos(TG)).astype(np.float32); my = (VIN_RING[1] + VIN_RING_K * RG * np.sin(TG)).astype(np.float32)
+    P = cv2.remap(img, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+    valid = ((mx >= 0) & (mx <= iw - 1) & (my >= 0) & (my <= ih - 1)).all(0)          # colonne visibili
+    # luce: media mobile lungo l'angolo (solo colonne visibili), poi interpolata nei settori fuori campo
+    from scipy.ndimage import gaussian_filter1d
+    wv = valid.astype(np.float32)
+    num = gaussian_filter1d(P * wv[None, :, None], 120, axis=1, mode="wrap")
+    den = gaussian_filter1d(np.broadcast_to(wv[None, :, None], P.shape).astype(np.float32), 120, axis=1, mode="wrap")
+    L = num / np.maximum(den, 1e-4)
+    idx = np.arange(nt); vi = idx[valid]
+    for c in range(3):
+        for i in range(nr):
+            L[i, :, c] = np.interp(idx, vi, L[i, vi, c], period=nt)
+    L = np.maximum(L, 0.02)
+    A = P / L
+    # disegno nei settori fuori campo: ripetizione del settore visibile più lungo (motivo periodico)
+    runs, j = [], 0
+    vv = np.concatenate([valid, valid])
+    while j < nt:
+        if vv[j]:
+            k = j
+            while k < j + nt and vv[k]: k += 1
+            runs.append((j, k)); j = k
+        else: j += 1
+    a0, a1 = max(runs, key=lambda r: r[1] - r[0]); a0 += 20; a1 -= 20
+    tpl = A[:, np.arange(a0, a1) % nt]
+    for j in np.where(~valid)[0]:
+        A[:, j] = tpl[:, (j - a1) % tpl.shape[1]]
+    m_ring = (soft(rr, r1, 3.0) * (1 - soft(rr, r0, 3.0)))
+    # braccio e testina: maschera dal poligono, sopra a tutto
+    am = Image.new("L", (iw, ih), 0); ImageDraw.Draw(am).polygon(VIN_ARM, fill=255)
+    m_arm = (np.asarray(am.filter(ImageFilter.GaussianBlur(2)), np.float32) / 255)[..., None]
+    _VIN.update(img=img, lab=lab, m_sp=m_sp, m_lab=m_lab, m_ring=m_ring, m_arm=m_arm, A=A, L=L,
+                rr=rr, th=th, r0=r0 - 4, nt=nt, ih=ih, iw=iw)
+    return _VIN
+
+def vinyl_frame(t, u_zoom):
+    """t: secondi dall'inizio dell'inserto; u_zoom: 0 -> 1 lungo l'inserto (zoom 1,00 -> 1,06)"""
+    import cv2
+    V = vinyl_setup(); ih, iw = V["ih"], V["iw"]
+    blur = VIN_W / FPS * 0.12                      # leggero motion blur (otturatore ~43°): i puntini restano leggibili
+    subs = [t * VIN_W + blur * (k / 4 - 0.5) for k in range(5)]
+    # etichetta: rotazione oraria attorno al suo centro
+    lab = np.zeros_like(V["img"])
+    for ph in subs:
+        M = cv2.getRotationMatrix2D(VIN_LABEL, -math.degrees(ph), 1.0)
+        lab += cv2.warpAffine(V["lab"], M, (iw, ih), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+    lab /= len(subs)
+    # anello: il disegno gira, la luce resta
+    ring = np.zeros_like(V["img"])
+    rmap = (V["rr"] - V["r0"]).astype(np.float32)
+    for ph in subs:
+        tmap = (np.mod(V["th"] - ph, 2 * math.pi) * V["nt"] / (2 * math.pi)).astype(np.float32)
+        ring += cv2.remap(V["A"], tmap, rmap, cv2.INTER_LINEAR, borderMode=cv2.BORDER_WRAP)
+    ring /= len(subs)
+    Lm = cv2.remap(V["L"], (V["th"] * V["nt"] / (2 * math.pi)).astype(np.float32), rmap, cv2.INTER_LINEAR,
+                   borderMode=cv2.BORDER_WRAP)
+    ring = ring * Lm
+    out = V["img"].copy()
+    out = out * (1 - V["m_ring"]) + ring * V["m_ring"]
+    out = out * (1 - V["m_lab"]) + lab * V["m_lab"]
+    out = out * (1 - V["m_sp"]) + V["img"] * V["m_sp"]       # perno: ruota su sé stesso (identico)
+    out = out * (1 - V["m_arm"]) + V["img"] * V["m_arm"]     # braccio e puntina sopra a tutto
+    # zoom lentissimo in avanti centrato sul perno, a pieno schermo
+    s_ = 1.0 + 0.06 * (u_zoom * u_zoom * (3 - 2 * u_zoom))
+    sx, sy = W / iw * s_, H / ih * s_
+    cx, cy = VIN_SPINDLE
+    M = np.float32([[sx, 0, cx * W / iw - sx * cx], [0, sy, cy * H / ih - sy * cy]])
+    return np.clip(cv2.warpAffine(out, M, (W, H), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE), 0, 1)
+
+class VinylReader:
+    def __init__(self, d, skip):
+        self.n = fr(d["t1"]) - fr(d["t0"]); self.k = skip
+    def read(self):
+        k = self.k; self.k += 1
+        return vinyl_frame(k / FPS, k / max(1, self.n - 1))
+    def close(self): pass
+
 class MontageReader:
     """raffica: seq = [(fotogramma d'inizio, n fotogrammi, clip, s di clip, zoom, cx, cy)]"""
     def __init__(self, d, skip):
@@ -1160,6 +1274,7 @@ class Sources:
                     if d["name"] == "nero": R = BlackReader
                     elif d["name"] == "raffica": R = MontageReader
                     elif d["name"] == "wave": R = WaveReader
+                    elif d["name"] == "vinile": R = VinylReader
                     elif "map" in d or "frames" in d: R = MapReader
                     self.cur = (j, R(d, f - fr(d["t0"])))
                 return self.cur[1].read()

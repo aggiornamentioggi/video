@@ -1,6 +1,28 @@
-# REPORT v10 (intro v7, mano e cestino, senza flash, tempo bastardo normale: in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
+# REPORT v11 (vinile nell'intro e modifiche v7–v10: in anteprima) / v6 (video completo) / v6 (video completo): "Non Mi Fermo" (Ipnos)
 
 Render completo con `tools/build.py` dalla timeline v6 di `tools/render.py` (esportato dopo "ok export"): è la v5 con main unito (cervello, corridoio di specchi, logo) e solo le modifiche richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
+
+## v11: vinile tra la porta e lo studio (in anteprima, export completo dopo "ok export")
+
+Modificata solo l'intro tra la porta e lo studio. Il video completo in `out/` è ancora la v6. Anteprima: `out/preview/preview_vinile.mp4` (dalla porta, 3,20 s, a "Torno sul pezzo", 9,91 s; 720p, CRF 28, con l'audio). Controllo dei bordi: 0 fotogrammi fuori soglia su 201. Stacchi sul beat a 5,29 (porta → vinile), 7,38 (vinile → studio), 7,80 e 8,22 (inquadrature dello studio).
+
+**Vinile** (5,29–7,38 s, 5 beat, ~2,1 s): immagine "Vinile al neon_ Non Mi Fermo.png" a pieno schermo, senza crop aggiuntivi, senza correzioni di luce e senza ribaltarla (la scritta resta a specchio).
+- **Etichetta**: ruota in senso orario a 33⅓ giri (0,56 giri/s) attorno al suo centro, stimato dal bordo (cerchio di raggio 248 px sull'immagine 941x1672). Il perno è separato dall'etichetta (inpainting) e rimesso sopra fermo: è una sfera, quindi ruotando su sé stesso appare identico. Così il perno non oscilla.
+- **Anello stroboscopico e bordo metallico**: ruotano alla stessa velocità attorno al centro del piatto. Il piatto è un'ellisse leggermente prospettica (1356x1397 px, centro 21 px sotto il perno), ricavata dai puntini. L'anello è srotolato in coordinate polari e separato in luce e disegno: i puntini girano, mentre la luce della stanza resta ferma. I tratti dell'anello fuori dall'immagine (tagliato ai lati) sono ricostruiti ripetendo il motivo dei puntini.
+- **Fascia del vinile con i solchi e i riflessi**: ferma, i riflessi restano sempre nello stesso punto.
+- **Braccio e puntina**: maschera dall'immagine, sopra a tutto. Stanno interamente sopra la fascia ferma (~555 px dal perno, mentre l'anello inizia a 630 px), quindi nessuna parte che ruota passa loro sotto.
+- **Bordi** tra parti che ruotano e parti ferme: maschere circolari ed ellittiche sfumate di 2–3 px, poste nelle fasce scure tra etichetta e solchi e tra solchi e anello. Nessun alone o scalino visibile.
+- **Motion blur leggero**: media di 5 posizioni su un arco pari a ~43° di otturatore. Con un blur più forte i puntini dell'anello diventavano linee continue.
+- **Zoom** lentissimo in avanti centrato sul perno, da 1,00 a 1,06 (ease-in-out), applicato all'immagine già composta.
+
+**Studio**: parte sul beat a 7,38 s da 2,0 s di clip, a velocità 1x, con le cuffie in testa esattamente su "Torno" (8,80 s). Tolta la parte iniziale in cui sta fermo con le cuffie in mano.
+- Larga (1,35x): 7,38–7,80.
+- Stretta (2x) sulle mani che portano su le cuffie: 7,80–8,22. Quella sulle cuffie in mano non è più possibile, perché quel tratto (0–1,2 s di clip) è stato tolto.
+- Media spalle e testa (1,5x) con punch-in 1,00 → 1,12 su "Torno": 8,22–9,91.
+- "Forse ci resto" e microfono invariati. Dopo 11,6 s nulla è cambiato.
+- La porta finisce dov'era (5,29 s); il vinile prende il posto della parte iniziale dello studio.
+
+Niente flash, tremolio, bande o sequenze di clip veloci.
 
 ## v10: "tempo bastardo" nei sottotitoli normali (in anteprima, export completo dopo "ok export")
 

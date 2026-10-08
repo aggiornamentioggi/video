@@ -31,7 +31,8 @@ TRATTI = [
      next(w["inizio"] for w in WORDS if w["parola"] == "Vivere" and 44 < w["inizio"] < 45), 0.0),    # v9: senza flash bianchi
     ("preview_corda.mp4", ins["corda"]["t0"], ins["corda"]["t1"]),
     ("preview_lampione.mp4", ins["lampione"]["t0"], ins["lampione"]["t1"]),    # v10: "Corsa per il tempo bastardo" con i sottotitoli normali
-    ("preview_tempo_bastardo.mp4", ins["orologi"]["t0"], ins["orologi"]["t1"]),
+    ("preview_tempo_bastardo.mp4", ins["orologi"]["t0"], ins["orologi"]["t1"]),    # v11: dalla porta fino a "Torno sul pezzo" (senza margine)
+    ("preview_vinile.mp4", ins["porta"]["t0"], sez["intro"][2], 0.0),
 ]
 ONLY = sys.argv[2:]
 res = json.load(open(os.path.join(WORK, "previews.json"))) if ONLY and os.path.exists(
