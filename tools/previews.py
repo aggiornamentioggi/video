@@ -15,6 +15,7 @@ plan = json.loads(subprocess.check_output(RENDER + ["--plan"]))
 DUR = plan["durata_video"]
 ins = {d["name"]: d for d in plan["inserti"]}
 sez = {s[0]: s for s in plan["sezioni"]}
+WORDS = json.load(open(os.path.join(ROOT, "out", "sync.json")))["parole"]
 PAD = 1.0
 TRATTI = [
     ("preview_1_intro.mp4", 0.0, sez["intro"][2]),                      # fino a "Torno sul pezzo"
@@ -25,6 +26,9 @@ TRATTI = [
      [d for d in plan["inserti"] if d["name"] == "fiches" and not d.get("zoom")][0]["map"][1][0] + 0.75),
     # v7: intro multicamera, dall'inizio fino alla fine di "con il mio accento" (senza margine)
     ("preview_intro.mp4", 0.0, [d for d in plan["inserti"] if d["name"] == "tramonto"][0]["t0"], 0.0),
+    # v8: cestino, da "quello che ho fatto" a fine "lavorare per vivere" (senza margine)
+    ("preview_cestino.mp4", next(w["inizio"] for w in WORDS if w["parola"] == "quello" and 38 < w["inizio"] < 39),
+     next(w["inizio"] for w in WORDS if w["parola"] == "Vivere" and 44 < w["inizio"] < 45), 0.0),
 ]
 ONLY = sys.argv[2:]
 res = json.load(open(os.path.join(WORK, "previews.json"))) if ONLY and os.path.exists(

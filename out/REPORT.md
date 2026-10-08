@@ -1,6 +1,21 @@
-# REPORT v7 (intro in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
+# REPORT v8 (intro v7 e cestino in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
 
 Render completo con `tools/build.py` dalla timeline v6 di `tools/render.py` (esportato dopo "ok export"): è la v5 con main unito (cervello, corridoio di specchi, logo) e solo le modifiche richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
+
+## v8: cestino su "Solo soldato … ma sono tornato" (in anteprima, export completo dopo "ok export")
+
+Modificato solo il blocco "Solo soldato / le barre ho buttato / pacato, svogliato / ma sono tornato". L'intro resta quella multicamera della v7. Il video completo in `out/` è ancora la v6. Anteprima: `out/preview/preview_cestino.mp4` (da "quello che ho fatto", 38,44 s, a fine "lavorare per vivere", 44,52 s; 720p, CRF 28, con l'audio). Controllo dei bordi: 0 fotogrammi fuori soglia su 183.
+
+- Clip "A-single-crumpled-paper-ball-falls-from.mp4". Uso solo la prima caduta: da 0 s al primo contatto della palla con il cestino (0,75 s di clip; la palla entra in campo dall'alto a 0,54 s). Scartati il rimbalzo dei fogli, il rimbalzo alto e la seconda caduta.
+- Rallenty fluido: versione della clip interpolata a 60 fps con `minterpolate` (mci, aobmc), così a 0.54x ogni fotogramma è diverso.
+- **"Solo soldato / le barre ho buttato"** (39.06–40.44 s): in avanti a 0.54x (sopra 0,5x), con il contatto esattamente su "buttato" (40,44 s). Il tempo bastava, quindi non è servito tenere fermi i primi fotogrammi.
+- **"Pacato, svogliato"** (40.44–41.81 s): fermo sul fotogramma del contatto (palla appoggiata sul cestino), primo fotogramma del reverse.
+- **"Ma sono tornato"** (41.81–42.86 s): lo stesso tratto al contrario, alla stessa velocità. La palla si stacca e risale, uscendo dall'inquadratura in alto esattamente su "tornato" (42,20 s). Poi resta il cestino senza palla fino allo stacco.
+- Stacchi sul beat ai due estremi del blocco: 39,06 s (prima era a "Solo", 39,24 s, quindi il microfono finisce 0,18 s prima) e 42,86 s (l'ufficio parte 0,02 s dopo). Dentro il blocco nessuno stacco.
+- Tolta la clip della mano (era su "Solo soldato").
+- **Raffica su "Pacato" tolta del tutto.** Nel video non restano sequenze di clip rapide di fila. Restano solo gli stacchi sul beat dell'intro multicamera v7 su "Forse ci resto" (stessa clip, crop diversi), che avevi chiesto tu.
+- "Clip del cono" e "teaser a raffica": nella repo non c'è nessuna clip del cono e non è usata nel video; il teaser a raffica era il montaggio su "Pacato", ora tolto.
+- Niente flash, tremolio o bande.
 
 ## v7: intro multicamera (in anteprima, export completo dopo "ok export")
 

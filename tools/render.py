@@ -62,7 +62,9 @@ NEW_CLIPS = {"tramonto": "tramonto", "ufficio": "ufficio", "brocca": "brocca", "
              "cuore": "The-glass-heart",
              # v6
              "cervello": "The-existing-crack-on-the-plaster", "specchi": "Corridoio infinito di specchi",
-             "logo": "Logo IPNOS Creative Studio"}
+             "logo": "Logo IPNOS Creative Studio",
+             # v8
+             "cestino": "A-single-crumpled-paper-ball-falls"}
 for _k, _p in NEW_CLIPS.items():
     if find_src([_p]): SRC[_k] = find_src([_p])
 OPTIONAL = ["moneta", "goccia", "carte", "petardo", "mare", "lampione", "personaggio", "performance"]
@@ -263,10 +265,21 @@ ins("vetro", a, e, map=[(a, p, 0.0, 1.5), (p, e, 1.5, 1.5 + e - p)])   # B: 1,9x
 T_ARTE = e; T_SBATTO = S(L("Per sta roba"))
 fit("studio", T_ARTE, T_SBATTO, 0.3, 2.6, zoom=2.2, cx=0.80, cy=0.36)       # stretto sull'attrezzatura
 a = L("Solo soldato"); bt = wt("buttato", a); e = L("Pacato")
-fit("microfono", T_SBATTO, a, 1.6, clipend("microfono"), zoom=1.25, cx=0.6, cy=0.5, zoomramp=(1.0, 1.15))
-mapped("mano", a, e, 3.0 - (bt - a), 3.0 + (e - bt))       # stretta (3,0 s di clip) su "buttato"
-T_PAC = e; T_LAV = wt("Lavorare", a)
-MONTAGE = (T_PAC, T_LAV)                                  # raffica: riempita più sotto
+# v8: "Solo soldato ... ma sono tornato": cestino, solo la prima caduta (0 -> contatto a 0,75 s).
+# Avanti rallentata (>= 0,5x, interpolata a 60 fps) con il contatto su "buttato"; poi al contrario,
+# palla ferma sul cestino e risalita fuori campo su "tornato". Stacchi sul beat ai due estremi.
+CB0, CB1 = S(a), S(wt("Lavorare", a))
+CEST_HIT, CEST_OUT = 0.75, 0.54                           # contatto; ingresso in campo dall'alto
+TORN = wt("tornato", e)
+fit("microfono", T_SBATTO, CB0, 1.6, clipend("microfono"), zoom=1.25, cx=0.6, cy=0.5, zoomramp=(1.0, 1.15))
+sp_c = max(0.5, CEST_HIT / (bt - CB0))
+t_in = bt - CEST_HIT / sp_c                               # se serve, prima i fotogrammi fermi
+t_up = TORN - (CEST_HIT - CEST_OUT) / sp_c                # inizio della risalita al contrario
+cmap = ([(CB0, t_in, 0.0, 0.0)] if t_in > CB0 + 1e-3 else []) + [
+    (max(CB0, t_in), bt, 0.0, CEST_HIT), (bt, t_up, CEST_HIT, CEST_HIT),
+    (t_up, CB1, CEST_HIT, max(0.0, CEST_HIT - (CB1 - t_up) * sp_c))]
+ins("cestino_hfr", CB0, CB1, map=cmap, velocita=round(sp_c, 3))
+T_LAV = CB1
 a = T_LAV; e = wt("Dentro", a); mapped("ufficio", a, e, 0.0, e - a)
 a = e; e = wt("Gioco", a); mapped("brocca", a, e, 0.0, e - a)
 a = e; e = wt("Devi", a); mapped("carte", a, e, 0.0, clipend("carte"))   # tutta la clip
@@ -387,32 +400,7 @@ TRAD = wt("tradito", T_CAP); CRACK = 4.08; BRAIN_IN = 0.16
 ins("cervello", T_CAP, chorus[1][0], map=[(T_CAP, TRAD, BRAIN_IN, CRACK),
                                           (TRAD, chorus[1][0], CRACK, clipend("cervello"))])
 
-# --- raffica su "Pacato": tutte le clip viste fino a lì, 2-3 fotogrammi l'una, cambio su ogni beat
-seen = []
-for d in sorted(inserts, key=lambda d: d["t0"]):
-    if d["t0"] >= MONTAGE[0] or ("map" not in d and d["name"] != "specchi") or d.get("no_raffica"): continue
-    if d.get("raffica_as"):
-        seen.append(tuple(d["raffica_as"])); continue
-    if d["name"] == "specchi":                    # v6: immagine ferma (al posto del muro)
-        seen.append(("specchi", 0.0, 1.1, 0.5, 0.5)); continue
-    m = d["map"][0]; mid_c = (m[2] + m[3]) / 2
-    name = "corridoio" if d["name"] == "corridoio_hfr" else d["name"]
-    if d["name"] == "corridoio_hfr": mid_c = 0.0
-    seen.append((name, mid_c, d.get("zoom", 1.0), d.get("cx", 0.5), d.get("cy", 0.5)))
-f0, f1 = fr(MONTAGE[0]), fr(MONTAGE[1])
-anchors = sorted({f0, f1} | {fr(b) for b in GRID if f0 < fr(b) < f1})
-segs = []
-for x0, x1 in zip(anchors[:-1], anchors[1:]):
-    x = x0
-    while x < x1:
-        n = 3 if x1 - x >= 5 or x1 - x == 3 else min(2, x1 - x)
-        segs.append((x, min(x1, x + n))); x += n
-seq = []
-for k, (x0, x1) in enumerate(segs):
-    name, c, z, cx, cy = seen[k % len(seen)]
-    if name != "specchi": c = min(c + 0.6 * (k // len(seen)), clipend(name) - 0.2)   # seconda passata
-    seq.append((x0 - f0, x1 - x0, name, round(c, 3), z, cx, cy))
-ins("raffica", MONTAGE[0], MONTAGE[1], seq=seq)
+# v8: raffica su "Pacato" tolta (nessuna sequenza di clip rapide)
 
 # niente sovrapposizioni: ogni inserto finisce dove inizia il successivo
 inserts.sort(key=lambda d: d["t0"])
@@ -539,12 +527,12 @@ def prep():
             np.save(os.path.join(PREP, "bg_penna.npy"), np.asarray(im)[None])
             continue
         out = os.path.join(PREP, f"{name}.mp4")
-        if name == "corridoio" and not os.path.exists(os.path.join(PREP, "corridoio_hfr.mp4")) \
+        if name in ("corridoio", "cestino") and not os.path.exists(os.path.join(PREP, f"{name}_hfr.mp4")) \
                 and os.path.exists(out):
             subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", out, "-vf",
                 "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1", "-an",
                 "-c:v", "libx264", "-crf", "10", "-preset", "veryfast", "-pix_fmt", "yuv420p",
-                os.path.join(PREP, "corridoio_hfr.mp4")])
+                os.path.join(PREP, f"{name}_hfr.mp4")])
         if os.path.exists(out) and "--force" not in ARGS: continue
         subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", src, "-vf",
             f"{CROP},scale={W}:{H}:flags=lanczos,{GRADE}", "-an", "-c:v", "libx264", "-crf", "10",
