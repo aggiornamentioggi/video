@@ -1,4 +1,76 @@
-# REPORT v14 (iPod, quaderno, vinile vero e modifiche v7–v10: in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
+# REPORT FINALE: "Non Mi Fermo" (Ipnos)
+
+Export completo dopo "ok export", da `tools/build.py` con la timeline finale di `tools/render.py` (v14).
+
+## File
+
+| File | Durata | Peso | CRF | Note |
+|---|---|---|---|---|
+| `non_mi_fermo_finale_1080x1920.mp4` | 179.70 s | 83.2 MB | 22 | CRF 20 → 120.5 MB (oltre 95 MB), riesportato a CRF 22 |
+| `taglio_ritornello.mp4` | 29.00 s | 13.0 MB | 20 | CRF 20 al primo tentativo; segmento 63.13–90.12 s del video finale |
+| `taglio_strofa.mp4` | 33.73 s | 24.1 MB | 20 | CRF 20 al primo tentativo; segmento 99.03–130.75 s del video finale |
+| `taglio_finale.mp4` | 35.87 s | 16.7 MB | 20 | CRF 20 al primo tentativo; segmento 143.85–179.70 s del video finale |
+| `anteprima_ritornello.mp4` | 20.00 s | 9.1 MB | 20 | 20 s dal primo ritornello |
+
+- **Specifiche** (ffprobe): 1080x1920, 30 fps, H.264 High yuv420p, preset slow, AAC-LC 192 kbps (nominali; ffprobe ne misura ~200), una sola traccia audio (il brano), `-movflags +faststart` (moov prima di mdat). Tutti sotto i 95 MB.
+- **Regola del peso**: a CRF 20 il video finale pesava 120.5 MB, quindi riesportato a CRF 22 → 83.2 MB.
+- `non_mi_fermo_v3_1080x1920.mp4` è il vecchio export v6, lasciato per non rompere i link; il video finale è `non_mi_fermo_finale_1080x1920.mp4`.
+
+**Controllo automatico dei bordi** (`tools/edge_check.py`: 4 colonne a sinistra e a destra di ogni fotogramma contro il contenuto vicino):
+
+| File | Fotogrammi | Fuori soglia |
+|---|---|---|
+| `non_mi_fermo_finale_1080x1920.mp4` | 5391 | 0 |
+| `taglio_ritornello.mp4` | 870 | 0 |
+| `taglio_strofa.mp4` | 1012 | 0 |
+| `taglio_finale.mp4` | 1076 | 0 |
+| `anteprima_ritornello.mp4` | 600 | 0 |
+
+## Verifica prima dell'export
+
+Ho confrontato il piano completo e il codice con tutte le modifiche approvate in sessione, comprese quelle viste solo in anteprima: 22 controlli su 22 superati, nessun buco o sovrapposizione tra gli inserti. **Non mancava nulla da integrare.** Ho controllato anche i fotogrammi chiave del video finale. L'unica modifica allo script per l'export è il nome del file finale in `tools/build.py`.
+
+## Modifiche incluse nel video finale
+
+**Intro**
+- IPNOS bianca (#FFFFFF), ~25% della larghezza, al 68% dell'altezza, sui due colpi (0,165 e 0,655 s), sopra il corridoio in movimento; sfuma sulla coda d'eco (v6).
+- Corridoio dal primo fotogramma, con speed ramp 1,0x → 0,5x interpolato a 60 fps (v6).
+- Porta (3,20–5,29 s).
+- Giradischi vero `vinile_vero.mp4` così com'è (5,29–7,38 s). Il vinile ruotato al computer e l'immagine statica sono eliminati (v12).
+- Studio multicamera: larga, stretta sulle mani che portano su le cuffie, media con punch-in 1,00 → 1,12 su "Torno sul pezzo"; "Forse ci resto" alterna stretta sul cappuccio e media sul beat (v7, accorciato in v11).
+- Quaderno così com'è su "Dico le cose quelle che sento" (11,59–13,26 s) (v13).
+- Microfono con zoom lento da "Confesso i peccati" (13,26–15,72 s) (v13).
+
+**Strofa 1**
+- Corridoio degli specchi su "Torno fresco … e domani resto" (22,55–25,96 s), carrello 1,00 → 1,20 e luce +10% su "quello" (v6).
+- Fiche in primo piano su "Dico solo che non voglio il resto"; pila intera che crolla su "investo" (v6).
+- Mano che stringe il foglio su "Solo soldato / le barre ho buttato"; cestino al contrario su "Pacato … ma sono tornato", con la palla che esce in alto su "tornato" (v8).
+- Raffica su "Pacato" tolta: nel video non ci sono più sequenze di clip rapide (v8).
+- Corda senza i due fotogrammi bianchi dello strappo (v9).
+- "Corsa per il tempo bastardo" nei sottotitoli normali, non più grande al centro (v10).
+- "Morite contenti / sono il salvatore / fatevi onore": nero con i sottotitoli normali (v5).
+
+**Ritornelli**
+- Waveform dallo stem vocale, sincronizzata con la voce, con puntina verde fissa (v5).
+- Cuore di vetro piccolo su nero, picchi sui colpi di cassa, spento su "muore" (v5).
+
+**Strofa 2**
+- iPod così com'è su "Quando mi ascolti / rimani connesso" (90,12–93,07 s) (v14).
+- Mare su "Non mi fotte … giuro" (v5).
+- Lampione da "Vedo il chiaro scuro", che si spegne su "più scuro", senza strobo bianco (v5, v9).
+- Cervello che si crepa su "tradito", stacco sul beat al ritornello (v6).
+
+**Finale**
+- "NON MI FERMO" più il logo IPNOS CREATIVE STUDIO (60% della larghezza, fuso in screen sul nero), fade a nero di 0,5 s con l'audio (v6).
+
+**Regole su tutto il video**
+- Niente tremolio, scossa o traslazioni: solo zoom centrati in avanti. Glitch senza pixel ripetuti ai lati. Niente bande (v5).
+- Le clip prese così come sono (vinile vero, quaderno, iPod) restano senza grading, grana, zoom sul beat né glitch (v12–v14).
+
+Il dettaglio di ogni versione resta nelle sezioni storiche qui sotto.
+
+---
+
 
 Render completo con `tools/build.py` dalla timeline v6 di `tools/render.py` (esportato dopo "ok export"): è la v5 con main unito (cervello, corridoio di specchi, logo) e solo le modifiche richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
 

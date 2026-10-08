@@ -64,7 +64,7 @@ if not fresh: run(["ffmpeg", "-v", "error", "-y", "-i", prev, "-vf",
      "tile=6x4:padding=4", "-frames:v", "1", os.path.join(OUT, "anteprima_sheet.jpg")])
 
 # 2. video completo (rifatto solo se manca o se l'intermedio è più recente)
-full = os.path.join(OUT, "non_mi_fermo_v3_1080x1920.mp4")
+full = os.path.join(OUT, "non_mi_fermo_finale_1080x1920.mp4")
 side = os.path.join(WORK, "full_tries.json")
 if os.path.exists(full) and os.path.exists(side) and os.path.getmtime(full) > os.path.getmtime(inter):
     crf_full, tries_full = json.load(open(side))
