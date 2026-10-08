@@ -265,20 +265,21 @@ ins("vetro", a, e, map=[(a, p, 0.0, 1.5), (p, e, 1.5, 1.5 + e - p)])   # B: 1,9x
 T_ARTE = e; T_SBATTO = S(L("Per sta roba"))
 fit("studio", T_ARTE, T_SBATTO, 0.3, 2.6, zoom=2.2, cx=0.80, cy=0.36)       # stretto sull'attrezzatura
 a = L("Solo soldato"); bt = wt("buttato", a); e = L("Pacato")
-# v8: "Solo soldato ... ma sono tornato": cestino, solo la prima caduta (0 -> contatto a 0,75 s).
-# Avanti rallentata (>= 0,5x, interpolata a 60 fps) con il contatto su "buttato"; poi al contrario,
-# palla ferma sul cestino e risalita fuori campo su "tornato". Stacchi sul beat ai due estremi.
+# v8: blocco "Solo soldato ... ma sono tornato" (stacchi sul beat ai due estremi). Del cestino si usa
+# solo la prima caduta (0 -> contatto a 0,75 s), al contrario.
 CB0, CB1 = S(a), S(wt("Lavorare", a))
 CEST_HIT, CEST_OUT = 0.75, 0.54                           # contatto; ingresso in campo dall'alto
 TORN = wt("tornato", e)
 fit("microfono", T_SBATTO, CB0, 1.6, clipend("microfono"), zoom=1.25, cx=0.6, cy=0.5, zoomramp=(1.0, 1.15))
-sp_c = max(0.5, CEST_HIT / (bt - CB0))
-t_in = bt - CEST_HIT / sp_c                               # se serve, prima i fotogrammi fermi
+# v8b: "Solo soldato / le barre ho buttato": la mano che stringe il foglio (stretta, 3,0 s di clip, su
+# "buttato"); stacco sul beat di "Pacato" al cestino al contrario: palla ferma sul cestino, poi risale
+# (0,5x, interpolata) e esce in alto su "tornato"
+CPAC = S(e)
+mapped("mano", CB0, CPAC, 3.0 - (bt - CB0), 3.0 + (CPAC - bt))
+sp_c = 0.5
 t_up = TORN - (CEST_HIT - CEST_OUT) / sp_c                # inizio della risalita al contrario
-cmap = ([(CB0, t_in, 0.0, 0.0)] if t_in > CB0 + 1e-3 else []) + [
-    (max(CB0, t_in), bt, 0.0, CEST_HIT), (bt, t_up, CEST_HIT, CEST_HIT),
-    (t_up, CB1, CEST_HIT, max(0.0, CEST_HIT - (CB1 - t_up) * sp_c))]
-ins("cestino_hfr", CB0, CB1, map=cmap, velocita=round(sp_c, 3))
+cmap = [(CPAC, t_up, CEST_HIT, CEST_HIT), (t_up, CB1, CEST_HIT, max(0.0, CEST_HIT - (CB1 - t_up) * sp_c))]
+ins("cestino_hfr", CPAC, CB1, map=cmap, velocita=sp_c)
 T_LAV = CB1
 a = T_LAV; e = wt("Dentro", a); mapped("ufficio", a, e, 0.0, e - a)
 a = e; e = wt("Gioco", a); mapped("brocca", a, e, 0.0, e - a)
