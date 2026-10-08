@@ -66,7 +66,9 @@ NEW_CLIPS = {"tramonto": "tramonto", "ufficio": "ufficio", "brocca": "brocca", "
              # v8
              "cestino": "A-single-crumpled-paper-ball-falls",
              # v12: video vero del giradischi (già montato e con il colore fatto)
-             "vinile_vero": "vinile_vero"}
+             "vinile_vero": "vinile_vero",
+             # v13
+             "quaderno": "The-lifted-pages-of-the-old-notebook"}
 for _k, _p in NEW_CLIPS.items():
     if find_src([_p]): SRC[_k] = find_src([_p])
 OPTIONAL = ["moneta", "goccia", "carte", "petardo", "mare", "lampione", "personaggio", "performance"]
@@ -241,8 +243,11 @@ FLASHES = {}
 
 # --- strofa 1
 T_VOR = S(L("Vorrei non ci fosse")); T_MENTE = S(L("La mente"))
-fit("microfono", T_DICO1, T_VOR, 0.0, clipend("microfono"), zoomramp=(1.0, 1.15),   # v7: da "Dico le cose"
-    raffica_as=("microfono", (T_VOR - CONF) / 2, 1.0, 0.5, 0.5))
+# v13: "Dico le cose quelle che sento": quaderno così com'è (1x dall'inizio, basta a coprire il verso);
+# "Confesso i peccati": stacco sul beat al microfono con lo zoom lento, come prima
+T_CONF = S(CONF)
+fit("quaderno", T_DICO1, T_CONF, 0.0, clipend("quaderno"), minsp=0.7, raw=True)
+fit("microfono", T_CONF, T_VOR, 0.0, clipend("microfono"), zoomramp=(1.0, 1.15))
 ins("tramonto", T_VOR, T_MENTE, map=[(T_VOR, T_MENTE, 0.0, 0.8 * (T_MENTE - T_VOR))])
 T_FRESCO = S(L("Torno fresco"))
 fit("pozzo", T_MENTE, T_FRESCO, 0.0, clipend("pozzo"), zoomramp=(1.0, 1.18))
@@ -524,6 +529,12 @@ def prep():
         if name == "vinile_vero":                  # così com'è: copia senza crop, scala né colore
             out = os.path.join(PREP, "vinile_vero.mp4")
             if not os.path.exists(out): subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", src, "-an", "-c:v", "copy", out])
+            continue
+        if name == "quaderno":                     # così com'è: solo 720x1280 -> 1080x1920 (lanczos)
+            out = os.path.join(PREP, "quaderno.mp4")
+            if not os.path.exists(out): subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", src, "-vf",
+                f"scale={W}:{H}:flags=lanczos", "-an", "-c:v", "libx264", "-crf", "10", "-preset", "veryfast",
+                "-pix_fmt", "yuv420p", out])
             continue
         if name == "penna":
             out = os.path.join(PREP, "penna.png")
@@ -1198,7 +1209,8 @@ def render_frame(f, src):
     for g0, amp in GL_FRAMES:
         if g0 <= f < g0 + (4 if amp > 10 else 2): frame = glitch(frame, f - g0, amp, f)
     # zoom punch sulle casse (+4% e ritorno in 4 frame); sobrio nella strofa 1
-    if sec[3] >= 1 and sec[0] not in ("tempo_bastardo",):
+    raw_now = any(d.get("raw") and fr(d["t0"]) <= f < fr(d["t1"]) for d in inserts)
+    if sec[3] >= 1 and sec[0] not in ("tempo_bastardo",) and not raw_now:
         arr = KICK_STRONG if sec[3] == 1 else KICK_T
         dk = last_event(arr, t)
         if dk is not None and dk < 4 / FPS:

@@ -1,6 +1,14 @@
-# REPORT v12 (vinile vero nell'intro e modifiche v7–v10: in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
+# REPORT v13 (quaderno, vinile vero e modifiche v7–v10: in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
 
 Render completo con `tools/build.py` dalla timeline v6 di `tools/render.py` (esportato dopo "ok export"): è la v5 con main unito (cervello, corridoio di specchi, logo) e solo le modifiche richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
+
+## v13: quaderno su "Dico le cose quelle che sento" (in anteprima, export completo dopo "ok export")
+
+Il video completo in `out/` è ancora la v6. Anteprima: `out/preview/preview_quaderno.mp4` (da "Torno sul pezzo", 8,80 s, a fine "Vorrei non ci fosse un domani", 16,96 s; 720p, CRF 28, con l'audio). Controllo dei bordi: 0 fotogrammi fuori soglia su 245.
+
+- **"Dico le cose quelle che sento"** (11,59–13,26 s, dal beat al beat): clip "The-lifted-pages-of-the-old-notebook-slo.mp4" così com'è, dall'inizio, a 1x. La clip (3 s) basta a coprire il verso (1,67 s), quindi non è servito rallentarla né interpolarla. È 720x1280, esattamente 9:16: portata a 1080x1920 solo con scaling lanczos, senza crop, zoom, correzioni di colore o grana. Niente zoom sul beat in questo tratto.
+- **"Confesso i peccati / con il mio accento"** (13,26–15,72 s): stacco sul beat al microfono con la griglia, che ora parte qui (prima partiva su "Dico le cose"), dall'inizio della clip a 1x con lo zoom lento in avanti 1,00 → 1,15 come prima. Lo stacco a 14,73 s è interno alla clip del microfono (cambio di inquadratura già presente).
+- Il resto invariato (nel piano cambiano solo questi due inserti). Niente flash, tremolio, bande o sequenze di clip veloci.
 
 ## v12: vinile vero tra la porta e lo studio (in anteprima, export completo dopo "ok export")
 
