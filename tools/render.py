@@ -585,7 +585,8 @@ def font(kind, size):
     return _fc[k]
 
 BASE = 64; KEYS = int(BASE * 1.4); TRACK = BASE * 0.02
-MAXW = int(W * 0.8); BAND = (int(H * 0.70), int(H * 0.80))
+# v15: zona sicura Reels: fascia alzata (58-68%) e margine destro libero per i pulsanti di Instagram
+XL, XR = int(W * 0.10), W - 160; MAXW = XR - XL; BAND = (int(H * 0.58), int(H * 0.68))
 GRAY = (128, 128, 128); REDDIM = tuple(int(v * 0.55) for v in RED)
 SPAD = 30
 
@@ -643,7 +644,7 @@ def paste_pm(frame, C, A, x0, y0, op=1.0):
 
 _lay = {}
 def layout(p):
-    """posizioni (x sinistra, linea di base) di ogni parola; una o due righe nella fascia 70-80%"""
+    """posizioni (x sinistra, linea di base) di ogni parola; una o due righe nella fascia 58-68%"""
     if p in _lay: return _lay[p]
     ix = PHR[p]["ix"]
     ws = [(i, text_len(word_font(i), word_text(i), 0 if red[i] else TRACK)) for i in ix]
@@ -664,7 +665,7 @@ def layout(p):
     for r, row in enumerate(rows):
         base = cy + KEYS * 0.36 + (r - (len(rows) - 1) / 2) * lh
         x = W / 2 - widths[r] / 2 + xoff
-        x = min(max(x, (W - MAXW) / 2), (W + MAXW) / 2 - widths[r])
+        x = min(max(x, XL), XR - widths[r])
         for i, w in row:
             pos[i] = (x, base, w); x += w + sp
     _lay[p] = pos

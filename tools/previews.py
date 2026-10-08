@@ -37,6 +37,9 @@ TRATTI = [
      next(w["inizio"] for w in WORDS if w["parola"] == "Che" and 16.5 < w["inizio"] < 17.5), 0.0),    # v14: dalla fine del ritornello precedente (ultima parola "muore") a fine "un mare diverso"
     ("preview_ipod.mp4", next(w["inizio"] for w in WORDS if w["parola"] == "muore" and 89 < w["inizio"] < 90.2),
      next(w["fine"] for w in WORDS if w["parola"] == "diverso" and 95 < w["inizio"] < 97), 0.0),
+    # v15: sottotitoli nella zona sicura dei Reels (frasi lunghe e su due righe)
+    ("preview_sottotitoli_1.mp4", 38.5, 46.0, 0.0),
+    ("preview_sottotitoli_2.mp4", 128.0, 142.0, 0.0),
 ]
 ONLY = sys.argv[2:]
 res = json.load(open(os.path.join(WORK, "previews.json"))) if ONLY and os.path.exists(
