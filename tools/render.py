@@ -68,7 +68,9 @@ NEW_CLIPS = {"tramonto": "tramonto", "ufficio": "ufficio", "brocca": "brocca", "
              # v12: video vero del giradischi (già montato e con il colore fatto)
              "vinile_vero": "vinile_vero",
              # v13
-             "quaderno": "The-lifted-pages-of-the-old-notebook"}
+             "quaderno": "The-lifted-pages-of-the-old-notebook",
+             # v14
+             "ipod": "ipod"}
 for _k, _p in NEW_CLIPS.items():
     if find_src([_p]): SRC[_k] = find_src([_p])
 OPTIONAL = ["moneta", "goccia", "carte", "petardo", "mare", "lampione", "personaggio", "performance"]
@@ -382,7 +384,8 @@ for name, first, last in VERSI:                 # come nella v3 (sul beat, fino 
     if f_ < b: b = float(GRID[GRID <= f_ + 1e-6][-1])
     ins(name, a, b, inp=0.0, ramp=False, slow08=True)
 T_MARE = S(L("Dentro la testa")); T_VEDO = S(L("Vedo il chiaro"))
-fit("studio", T_STR2, T_MARE, 3.8, clipend("studio"), zoom=1.0)      # cuffie, inquadratura larga
+# v14: "Quando mi ascolti / rimani connesso": ipod.mp4 così com'è (1x dall'inizio; 3 s bastano)
+fit("ipod", T_STR2, T_MARE, 0.0, clipend("ipod"), minsp=0.75, raw=True)
 fit("mare", T_MARE, T_VEDO, 0.0, clipend("mare"))        # v5: continua fino a "Vedo il chiaro scuro"
 c = L("Vedo il chiaro"); d_ = L("Che diventa")
 STROBE = (wt("chiaro", c), d_)                            # "chiaro scuro": lampi sul beat
@@ -526,8 +529,8 @@ def prep():
                     f"{CROP},scale={int(W * 1.2)}:{int(H * 1.2)}:flags=lanczos,{GRADE}", "-frames:v", "1", out])
             continue
         if name == "logo": continue                # usato così com'è (bianco su nero)
-        if name == "vinile_vero":                  # così com'è: copia senza crop, scala né colore
-            out = os.path.join(PREP, "vinile_vero.mp4")
+        if name in ("vinile_vero", "ipod"):        # così com'è: copia senza crop, scala né colore
+            out = os.path.join(PREP, f"{name}.mp4")
             if not os.path.exists(out): subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", src, "-an", "-c:v", "copy", out])
             continue
         if name == "quaderno":                     # così com'è: solo 720x1280 -> 1080x1920 (lanczos)
@@ -1206,10 +1209,10 @@ def render_frame(f, src):
     # v10: TEMPO BASTARDO nei sottotitoli normali, niente scritta grande
     if f >= fr(HIT1): paste_block(frame, NMF, Y_NMF_V6, f - fr(HIT1))
     if f >= fr(HIT2): paste_logo(frame, f - fr(HIT2))           # v6: logo dove entrava IPNOS
+    raw_now = any(d.get("raw") and fr(d["t0"]) <= f < fr(d["t1"]) for d in inserts)   # clip "così com'è"
     for g0, amp in GL_FRAMES:
-        if g0 <= f < g0 + (4 if amp > 10 else 2): frame = glitch(frame, f - g0, amp, f)
+        if g0 <= f < g0 + (4 if amp > 10 else 2) and not raw_now: frame = glitch(frame, f - g0, amp, f)
     # zoom punch sulle casse (+4% e ritorno in 4 frame); sobrio nella strofa 1
-    raw_now = any(d.get("raw") and fr(d["t0"]) <= f < fr(d["t1"]) for d in inserts)
     if sec[3] >= 1 and sec[0] not in ("tempo_bastardo",) and not raw_now:
         arr = KICK_STRONG if sec[3] == 1 else KICK_T
         dk = last_event(arr, t)

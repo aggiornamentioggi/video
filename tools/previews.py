@@ -34,7 +34,9 @@ TRATTI = [
     ("preview_tempo_bastardo.mp4", ins["orologi"]["t0"], ins["orologi"]["t1"]),    # v11: dalla porta fino a "Torno sul pezzo" (senza margine)
     ("preview_vinile.mp4", ins["porta"]["t0"], sez["intro"][2], 0.0),    # v13: da "Torno sul pezzo" a fine "Vorrei non ci fosse un domani" (senza margine)
     ("preview_quaderno.mp4", next(w["inizio"] for w in WORDS if w["parola"] == "Torno" and w["inizio"] < 9),
-     next(w["inizio"] for w in WORDS if w["parola"] == "Che" and 16.5 < w["inizio"] < 17.5), 0.0),
+     next(w["inizio"] for w in WORDS if w["parola"] == "Che" and 16.5 < w["inizio"] < 17.5), 0.0),    # v14: dalla fine del ritornello precedente (ultima parola "muore") a fine "un mare diverso"
+    ("preview_ipod.mp4", next(w["inizio"] for w in WORDS if w["parola"] == "muore" and 89 < w["inizio"] < 90.2),
+     next(w["fine"] for w in WORDS if w["parola"] == "diverso" and 95 < w["inizio"] < 97), 0.0),
 ]
 ONLY = sys.argv[2:]
 res = json.load(open(os.path.join(WORK, "previews.json"))) if ONLY and os.path.exists(

@@ -1,6 +1,15 @@
-# REPORT v13 (quaderno, vinile vero e modifiche v7–v10: in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
+# REPORT v14 (iPod, quaderno, vinile vero e modifiche v7–v10: in anteprima) / v6 (video completo): "Non Mi Fermo" (Ipnos)
 
 Render completo con `tools/build.py` dalla timeline v6 di `tools/render.py` (esportato dopo "ok export"): è la v5 con main unito (cervello, corridoio di specchi, logo) e solo le modifiche richieste. Il file completo si chiama ancora `non_mi_fermo_v3_1080x1920.mp4` per non rompere i link.
+
+## v14: iPod su "Quando mi ascolti / rimani connesso" (in anteprima, export completo dopo "ok export")
+
+Il video completo in `out/` è ancora la v6. Anteprima: `out/preview/preview_ipod.mp4` (da "muore", ultima parola del ritornello precedente, 89,72 s, a fine "un mare diverso", 96,60 s; 720p, CRF 28, con l'audio). Controllo dei bordi: 0 fotogrammi fuori soglia su 206.
+
+- **"Quando mi ascolti / rimani connesso"** (90,12–93,07 s): `ipod.mp4` (1080x1920, 30 fps, 3 s) al posto della clip dello studio, così com'è: dall'inizio, a 1x, fotogramma per fotogramma. Il tratto (2,95 s) è più corto della clip, quindi nessun rallentamento né interpolazione. Niente crop, zoom, correzioni di colore, grana o zoom sul beat.
+- **Stacchi sul beat**: l'ingresso a 90,12 s cade nello stesso fotogramma del beat di 90,14 s, l'uscita sul beat di 93,07 s (mare, invariato).
+- **Glitch**: un piccolo glitch della strofa 2 sui colpi di cassa forti (a 92,9 s) cadeva sopra l'iPod. Ora i glitch non si applicano alle clip prese così come sono (iPod, vinile vero, quaderno); fuori da questi tratti non cambia nulla, e sul vinile e sul quaderno non ce n'erano.
+- Il resto è invariato: nel piano cambia solo questo inserto. Niente flash, tremolio, bande o sequenze di clip veloci.
 
 ## v13: quaderno su "Dico le cose quelle che sento" (in anteprima, export completo dopo "ok export")
 
